@@ -24,23 +24,9 @@ checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 name = "cs2-lkm"
 version = "0.1.0"
 dependencies = [
- "ioctl-sys",
- "iocuddle",
  "libc",
  "nix",
 ]
-
-[[package]]
-name = "ioctl-sys"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8bd11f3a29434026f5ff98c730b668ba74b1033637b8817940b54d040696133c"
-
-[[package]]
-name = "iocuddle"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8972d5be69940353d5347a1344cb375d9b457d6809b428b05bb1ca2fb9ce007"
 
 [[package]]
 name = "libc"
