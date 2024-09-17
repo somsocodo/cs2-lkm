@@ -108,7 +108,7 @@ impl Driver {
         let mut data = read_mem_s  {
             addr,
             len: mem::size_of::<T>(),
-            buf_addr: &mut value as *mut T as usize
+            buf_addr: &mut value as *mut T as *mut () as usize
         };
 
         unsafe { 
