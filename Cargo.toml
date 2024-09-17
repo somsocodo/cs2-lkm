@@ -3,5 +3,12 @@ name = "cs2-lkm"
 version = "0.1.0"
 
 [dependencies]
+egui = "0.26"
+egui_overlay = { version = "0.8", features = [
+    "egui_default",
+    "glfw_default",
+] }
+egui_render_three_d = "0.8"
+egui_window_glfw_passthrough = { version = "0.8", features = ["image"] }
 libc = "0.2.158"
 nix = { version = "0.29.0", features = ["ioctl", "fs"] }
