@@ -9,7 +9,7 @@ pub struct Config {
 impl Config {
     pub fn new() -> Self {
         Self {
-            show_gui: true,
+            show_gui: false,
             nametags: true
         }
     }

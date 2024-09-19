@@ -2,7 +2,7 @@ use std::sync::{Arc, Barrier};
 use egui_overlay::EguiOverlay;
 use egui_render_three_d::ThreeDBackend as DefaultGfxBackend;
 use egui_overlay::egui_window_glfw_passthrough;
-use egui::{Context, Color32, Pos2, Order, Sense, Vec2};
+use egui::{Context, Color32, Pos2, Order, Sense, Vec2, FontFamily::Monospace};
 use crossbeam::channel::Receiver;
 
 use config::SharedConfig;
@@ -54,12 +54,33 @@ impl Render {
         }
 
         let name = format_name(&player.name.to_str());
-        let font_id = egui::FontId::proportional(16.0);
+        let font_id = egui::FontId::new(13.0, Monospace);
         let name_layout = ui.fonts(|fonts| fonts.layout_no_wrap(name.clone(), font_id.clone(), Color32::WHITE));
         let name_size = name_layout.size();
 
+        let health_str = player.health.to_string();
+
+        let health_layout = ui.fonts(|fonts| fonts.layout_no_wrap(health_str.clone(), font_id.clone(), Color32::WHITE));
+        let health_size = health_layout.size();
+
+        let box_padding = 3.0;
+        let box_width = name_size.x + health_size.x + 2.0 + box_padding * 2.0;
+        let box_height = name_size.y + box_padding * 2.0;
+    
+        let box_pos = Pos2::new(
+            player.pos_2d.x - box_width / 2.0, 
+            player.pos_2d.y - (name_size.y / 2.0) - 13.0);
+
+        painter.rect_filled(
+            egui::Rect::from_min_size(box_pos, egui::Vec2::new(box_width, box_height)),
+            1.0, // Rounding for the corners
+            Color32::from_rgba_unmultiplied(70, 70, 70, 150)
+        );
+
         painter.text(
-            Pos2::new(player.pos_2d.x - (name_size.x / 2.0) , player.pos_2d.y - 20.0),
+            Pos2::new(
+                player.pos_2d.x - (name_size.x / 2.0) - (health_size.x / 2.0), 
+                player.pos_2d.y - (name_size.y / 2.0) - 10.0),
             egui::Align2::LEFT_TOP,
             name,
             font_id.clone(),
@@ -72,8 +93,8 @@ impl Render {
 
         painter.text(
             Pos2::new(
-                player.pos_2d.x + (name_size.x / 2.0) + 2.0,
-                player.pos_2d.y - 20.0,
+                player.pos_2d.x + (name_size.x / 2.0) - (health_size.x / 2.0) + 2.0,
+                player.pos_2d.y - (name_size.y / 2.0) - 10.0,
                 ),
             egui::Align2::LEFT_TOP,
             player.health,
