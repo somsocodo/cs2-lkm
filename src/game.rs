@@ -79,8 +79,17 @@ pub fn update_players(
                     let current_pawn = player_base.pawn;
                     let current_controller = player_base.controller;
 
-                    let name: CUtlString = driver.read_mem(current_controller + schemas::libclient_so::CBasePlayerController::m_iszPlayerName);
+                    if driver.read_mem(current_controller + schemas::libclient_so::CBasePlayerController::m_bIsLocalPlayerController){
+                        continue;
+                    }
+
                     let health: i32 = driver.read_mem(current_pawn + schemas::libclient_so::C_BaseEntity::m_iHealth);
+
+                    if health <= 0 {
+                        continue;
+                    }
+
+                    let name: CUtlString = driver.read_mem(current_controller + schemas::libclient_so::CBasePlayerController::m_iszPlayerName);
                     let feet_pos: Vector3 = driver.read_mem(current_pawn + schemas::libclient_so::C_BasePlayerPawn::m_vOldOrigin);
                     let eye_pos: Vector3 = feet_pos + driver.read_mem(current_pawn + schemas::libclient_so::C_BaseModelEntity::m_vecViewOffset);
                     let pos_2d = eye_pos.world_to_screen(view_matrix);

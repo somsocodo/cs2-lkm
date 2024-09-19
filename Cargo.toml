@@ -13,3 +13,4 @@ egui_render_three_d = "0.8"
 egui_window_glfw_passthrough = { version = "0.8", features = ["image"] }
 libc = "0.2.158"
 nix = { version = "0.29.0", features = ["ioctl", "fs"] }
+rdev = "0.5.3"

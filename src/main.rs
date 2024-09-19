@@ -1,12 +1,17 @@
 #![allow(non_upper_case_globals, non_camel_case_types, non_snake_case)]
 extern crate libc;
 extern crate nix;
+
 extern crate egui;
 extern crate egui_overlay;
 extern crate egui_render_three_d;
+extern crate rdev;
+use rdev::{listen, Event, EventType, Key};
+
 extern crate crossbeam;
 use crossbeam::channel;
 use std::sync::{Arc, Barrier};
+use std::thread;
 
 mod driver;
 use driver::Driver;
@@ -16,6 +21,9 @@ mod game;
 mod sdk { pub mod CUtlString; pub mod Player; pub mod Vector;  }
 use sdk::Player::PlayerBase;
 use sdk::Player::Player;
+
+mod config;
+use config::{SharedConfig, init_config};
 
 mod cs2_dumper {pub mod offsets; pub mod libclient_so;}
 
@@ -43,10 +51,31 @@ fn main() {
         player_sender, 
         Arc::clone(&player_barrier));
 
+    let config = init_config();
+    key_listener(config.clone());
 
-    render::run_overlay(player_receiver, Arc::clone(&player_barrier));
+    render::run_overlay(player_receiver, Arc::clone(&player_barrier), config.clone());
 
     cache_players_handle.join().unwrap();
     update_players_handle.join().unwrap();
 
+}
+
+
+fn key_listener(config: SharedConfig) -> () {
+    thread::spawn(move || {
+        if let Err(error) = listen(move |event: Event| {
+            match event.event_type {
+                EventType::KeyPress(key) => {
+                    if key == Key::Insert {
+                        let mut config = config.lock().unwrap();
+                        config.show_gui = !config.show_gui;
+                    }
+                },
+                _ => {}
+            }
+        }) {
+            println!("Error: {:?}", error)
+        }
+    });
 }
