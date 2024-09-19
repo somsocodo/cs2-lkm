@@ -3,6 +3,7 @@ name = "cs2-lkm"
 version = "0.1.0"
 
 [dependencies]
+crossbeam = "0.8.4"
 egui = "0.26"
 egui_overlay = { version = "0.8", features = [
     "egui_default",
