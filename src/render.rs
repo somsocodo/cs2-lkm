@@ -17,8 +17,6 @@ pub struct Render {
     pub barrier: Arc<Barrier>
 }
 
-
-
 impl Render {    
     fn esp_overlay(&self, egui_context: &Context) {
         egui::Area::new("overlay")
@@ -30,17 +28,58 @@ impl Render {
                 let painter = ui.painter();
                 if let Ok(players) = self.player_receiver.recv() {
                     for player in players.iter() {
-                        painter.circle_stroke(
-                            Pos2::new(player.position_2d.x, player.position_2d.y),
-                            2.0,
-                            Stroke::new(2.0, Color32::RED),
-                        );
+                        self.draw_nametags(player, ui, painter);
                     }
                 }
             });
             self.barrier.wait();
     }
+
+    fn draw_nametags(&self, player: &Player, ui: &egui::Ui, painter: &egui::Painter) {
+        fn format_name(name: &str) -> String {
+            let trimmed_name = name.trim();
+        
+            if trimmed_name.len() > 7 {
+                trimmed_name.chars().take(7).collect::<String>() + "..."
+            } else {
+                trimmed_name.to_string()
+            }
+        }
+
+        let name = format_name(&player.name.to_str());
+        let font_id = egui::FontId::proportional(16.0);
+        let name_layout = ui.fonts(|fonts| fonts.layout_no_wrap(name.clone(), font_id.clone(), Color32::WHITE));
+        let name_size = name_layout.size();
+
+        painter.text(
+            Pos2::new(player.position_2d.x - (name_size.x / 2.0) , player.position_2d.y - 20.0),
+            egui::Align2::LEFT_TOP,
+            name,
+            font_id.clone(),
+            Color32::WHITE,
+        );
+
+        let health_text = format!("{}", player.health);
+        let health_layout = ui.fonts(|fonts| fonts.layout_no_wrap(health_text.clone(), font_id.clone(), Color32::WHITE));
+        let health_size = health_layout.size(); // Get health text size
+
+        let red = (2.0 * (100.0 - player.health as f32) / 100.0).min(1.0);
+        let green = (2.0 * player.health as f32 / 100.0).min(1.0);
+        let color = Color32::from_rgb((red * 255.0) as u8, (green * 255.0) as u8, 0);
+
+        painter.text(
+            Pos2::new(
+                player.position_2d.x + (name_size.x / 2.0) + 2.0,
+                player.position_2d.y - 20.0,
+                ),
+            egui::Align2::LEFT_TOP,
+            health_text,
+            font_id.clone(),
+            color,
+        );
+    }
 }
+
 
 
 impl EguiOverlay for Render {
