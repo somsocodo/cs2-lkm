@@ -7,8 +7,8 @@ pub struct CUtlString {
 }
 
 impl Default for CUtlString {
-    fn default() -> CUtlString {
-        CUtlString {
+    fn default() -> Self {
+        Self {
             text: [0; 512]
         }
     }

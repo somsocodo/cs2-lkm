@@ -64,6 +64,7 @@ pub fn update_players(
     thread::spawn(move || {
         let client_addr =  driver.read_module("libclient.so");
         let mut player_cache = Vec::new();
+        let mut local_player: usize = 0;
 
         loop {
             let mut players = Vec::new();
@@ -79,7 +80,7 @@ pub fn update_players(
                     let current_pawn = player_base.pawn;
                     let current_controller = player_base.controller;
 
-                    if driver.read_mem(current_controller + schemas::libclient_so::CBasePlayerController::m_bIsLocalPlayerController){
+                    if current_pawn == 0 {
                         continue;
                     }
 
@@ -89,13 +90,26 @@ pub fn update_players(
                         continue;
                     }
 
+                    if driver.read_mem(current_controller + schemas::libclient_so::CBasePlayerController::m_bIsLocalPlayerController){
+                        local_player = current_pawn;
+                        continue;
+                    }
+
+                    if local_player == 0 {
+                        continue;
+                    }
+
                     let name: CUtlString = driver.read_mem(current_controller + schemas::libclient_so::CBasePlayerController::m_iszPlayerName);
                     let feet_pos: Vector3 = driver.read_mem(current_pawn + schemas::libclient_so::C_BasePlayerPawn::m_vOldOrigin);
                     let mut eye_pos: Vector3 = feet_pos + driver.read_mem(current_pawn + schemas::libclient_so::C_BaseModelEntity::m_vecViewOffset);
-                    eye_pos.z += 13.5;
+                    eye_pos.z += 13.5; // For nametags only
                     let pos_2d = eye_pos.world_to_screen(view_matrix);
 
-                    let player = Player::new(name, health, eye_pos, pos_2d);
+                    let scene_node: usize = driver.read_mem(current_pawn + schemas::libclient_so::C_BaseEntity::m_pGameSceneNode);
+                    let bone_matrix: usize = driver.read_mem(scene_node + schemas::libclient_so::CSkeletonInstance::m_modelState + 0x80);
+
+                    let mut player = Player::new(name, health, eye_pos, pos_2d);
+                    player.read_bones(driver, bone_matrix, view_matrix);
 
                     if i < players.len() {
                         players[i] = player; 

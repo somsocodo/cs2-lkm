@@ -1,11 +1,21 @@
-use std::ops::{Add, Sub, Mul};
+use std::ops::{Add, Sub, Mul, MulAssign};
 
+#[derive(Copy, Clone)]
+pub struct Vector4 {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub w: f32
+}
+
+#[derive(Copy, Clone)]
 pub struct Vector3 {
     pub x: f32,
     pub y: f32,
     pub z: f32,
 }
 
+#[derive(Copy, Clone)]
 pub struct Vector2 {
     pub x: f32,
     pub y: f32,
@@ -71,5 +81,13 @@ impl Mul<f32> for Vector3 {
             y: self.y * scalar,
             z: self.z * scalar,
         }
+    }
+}
+
+impl MulAssign<f32> for Vector3 {
+    fn mul_assign(&mut self, rhs: f32) {
+        self.x *= rhs;
+        self.y *= rhs;
+        self.z *= rhs;
     }
 }

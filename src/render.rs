@@ -36,10 +36,26 @@ impl Render {
                         if nametags {
                             self.draw_nametags(player, ui, painter);
                         }
+                        self.draw_bones(player, ui, painter)
                     }
                 }
             });
             self.barrier.wait();
+    }
+
+    fn draw_bones(&self, player: &Player, ui: &egui::Ui, painter: &egui::Painter) {
+        for bone in player.bones_2d.iter() {
+            // Make sure the bone is a valid position, e.g., avoid uninitialized or out of view values.
+            if bone.x == -99.0 && bone.y == -99.0 {
+                continue;
+            }
+    
+            // Draw a circle at the bone position
+            let radius = 5.0; // You can adjust the radius of the circle
+            let color = egui::Color32::from_rgb(255, 0, 0); // Red color for the circle
+    
+            painter.circle_filled(egui::Pos2::new(bone.x, bone.y), radius, color);
+        }
     }
 
     fn draw_nametags(&self, player: &Player, ui: &egui::Ui, painter: &egui::Painter) {
