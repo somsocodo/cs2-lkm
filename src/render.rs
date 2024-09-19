@@ -2,7 +2,7 @@ use std::sync::{Arc, Barrier};
 use egui_overlay::EguiOverlay;
 use egui_render_three_d::ThreeDBackend as DefaultGfxBackend;
 use egui_overlay::egui_window_glfw_passthrough;
-use egui::{Context, Color32, Stroke, Pos2, Order, Sense, Vec2};
+use egui::{Context, Color32, Pos2, Order, Sense, Vec2};
 use crossbeam::channel::Receiver;
 
 use sdk::Player::Player;
@@ -52,16 +52,12 @@ impl Render {
         let name_size = name_layout.size();
 
         painter.text(
-            Pos2::new(player.position_2d.x - (name_size.x / 2.0) , player.position_2d.y - 20.0),
+            Pos2::new(player.pos_2d.x - (name_size.x / 2.0) , player.pos_2d.y - 20.0),
             egui::Align2::LEFT_TOP,
             name,
             font_id.clone(),
             Color32::WHITE,
         );
-
-        let health_text = format!("{}", player.health);
-        let health_layout = ui.fonts(|fonts| fonts.layout_no_wrap(health_text.clone(), font_id.clone(), Color32::WHITE));
-        let health_size = health_layout.size(); // Get health text size
 
         let red = (2.0 * (100.0 - player.health as f32) / 100.0).min(1.0);
         let green = (2.0 * player.health as f32 / 100.0).min(1.0);
@@ -69,11 +65,11 @@ impl Render {
 
         painter.text(
             Pos2::new(
-                player.position_2d.x + (name_size.x / 2.0) + 2.0,
-                player.position_2d.y - 20.0,
+                player.pos_2d.x + (name_size.x / 2.0) + 2.0,
+                player.pos_2d.y - 20.0,
                 ),
             egui::Align2::LEFT_TOP,
-            health_text,
+            player.health,
             font_id.clone(),
             color,
         );

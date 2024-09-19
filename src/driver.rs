@@ -30,6 +30,7 @@ struct read_mem_s {
     buf_addr: uintptr_t
 }
 
+#[derive(Copy, Clone)]
 pub struct Driver {
     fd: i32
 }

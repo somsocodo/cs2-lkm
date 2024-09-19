@@ -2,22 +2,37 @@ use super::Vector::Vector3;
 use super::Vector::Vector2;
 use super::CUtlString::CUtlString;
 
-pub struct Player {
+#[derive(Copy, Clone)]
+pub struct PlayerBase {
     pub pawn: usize,
+    pub controller: usize,
+    pub idx: usize
+}
+
+impl PlayerBase {
+    pub fn new(pawn: usize, controller: usize, idx: usize) -> Self {
+        PlayerBase {
+            pawn,
+            controller,
+            idx
+        }
+    }
+}
+
+pub struct Player {
     pub name: CUtlString,
     pub health: i32,
-    pub position: Vector3,
-    pub position_2d: Vector2
+    pub pos: Vector3,
+    pub pos_2d: Vector2
 }
 
 impl Player {
-    pub fn new(pawn: usize, name: CUtlString, health: i32, position: Vector3, position_2d: Vector2) -> Self {
+    pub fn new(name: CUtlString, health: i32, pos: Vector3, pos_2d: Vector2) -> Self {
         Player {
-            pawn,
             name,
             health,
-            position,
-            position_2d
+            pos,
+            pos_2d
         }
     }
 }
