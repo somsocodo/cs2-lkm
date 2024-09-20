@@ -14,6 +14,8 @@ use sdk::Vector::Vector3;
 use cs2_dumper::offsets::cs2_dumper::offsets;
 use cs2_dumper::libclient_so::cs2_dumper::schemas;
 
+use crate::sdk::Vector::Vector2;
+
 pub fn cache_players(
     driver: Driver, 
     player_cache_sender: Sender<Vec<PlayerBase>>, 
@@ -107,9 +109,11 @@ pub fn update_players(
 
                     let scene_node: usize = driver.read_mem(current_pawn + schemas::libclient_so::C_BaseEntity::m_pGameSceneNode);
                     let bone_matrix: usize = driver.read_mem(scene_node + schemas::libclient_so::CSkeletonInstance::m_modelState + 0x80);
+                    let view_angle: Vector2 = driver.read_mem(local_player + schemas::libclient_so::C_BasePlayerPawn::v_angle);
 
                     let mut player = Player::new(name, health, eye_pos, pos_2d);
                     player.read_bones(driver, bone_matrix, view_matrix);
+                    player.read_hitboxes(driver, view_angle, view_matrix);
 
                     if i < players.len() {
                         players[i] = player; 

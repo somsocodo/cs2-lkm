@@ -36,23 +36,47 @@ impl Render {
                         if nametags {
                             self.draw_nametags(player, ui, painter);
                         }
-                        self.draw_bones(player, ui, painter)
+                        //self.draw_bones(player, ui, painter);
+                        self.draw_hitboxes(player, ui, painter);
                     }
                 }
             });
             self.barrier.wait();
     }
 
+    fn draw_hitboxes(&self, player: &Player, ui: &egui::Ui, painter: &egui::Painter) {
+        for hitbox in player.hitboxes.iter() {
+            let bone_pos = player.bones_2d[hitbox.bone_idx];
+            
+            let bb_min = hitbox.min_bounds_2d;
+            let bb_max = hitbox.max_bounds_2d;
+    
+            let bb_min_pos = egui::Pos2::new(bb_min.x, bb_min.y);
+            let bb_max_pos = egui::Pos2::new(bb_max.x, bb_max.y);
+    
+            if (bb_min.x - bb_max.x).abs() > ui.available_rect_before_wrap().width() as f32 {
+                continue;
+            }
+    
+            let color = egui::Color32::from_rgba_premultiplied(255, 0, 0, 30); 
+            
+            let radius_min = hitbox.min_rad_2d;
+            let radius_max = hitbox.max_rad_2d;
+    
+            painter.circle_filled(bb_max_pos, radius_min, color);
+            painter.circle_filled(bb_min_pos, radius_max, color);
+            painter.line_segment([bb_min_pos, bb_max_pos], (radius_min * 2.0, color));
+        }
+    }
+
     fn draw_bones(&self, player: &Player, ui: &egui::Ui, painter: &egui::Painter) {
         for bone in player.bones_2d.iter() {
-            // Make sure the bone is a valid position, e.g., avoid uninitialized or out of view values.
             if bone.x == -99.0 && bone.y == -99.0 {
                 continue;
             }
     
-            // Draw a circle at the bone position
-            let radius = 5.0; // You can adjust the radius of the circle
-            let color = egui::Color32::from_rgb(255, 0, 0); // Red color for the circle
+            let radius = 3.0;
+            let color = egui::Color32::from_rgb(255, 0, 0);
     
             painter.circle_filled(egui::Pos2::new(bone.x, bone.y), radius, color);
         }
@@ -129,7 +153,7 @@ impl EguiOverlay for Render {
         _default_gfx_backend: &mut DefaultGfxBackend,
         glfw_backend: &mut egui_window_glfw_passthrough::GlfwBackend,
     ) {
-        glfw_backend.window.set_pos(0, 0);
+        glfw_backend.window.set_pos(0, 35);
         glfw_backend.window.set_size(1024, 768);
 
         let mut config = self.config.lock().unwrap();

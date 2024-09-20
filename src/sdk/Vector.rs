@@ -21,6 +21,12 @@ pub struct Vector2 {
     pub y: f32,
 }
 
+impl Default for Vector2 {
+    fn default() -> Self {
+        Vector2 { x: 0.0, y: 0.0 }
+    }
+}
+
 impl Default for Vector3 {
     fn default() -> Self {
         Vector3 { x: 0.0, y: 0.0, z: 0.0 }
@@ -89,5 +95,62 @@ impl MulAssign<f32> for Vector3 {
         self.x *= rhs;
         self.y *= rhs;
         self.z *= rhs;
+    }
+}
+
+pub fn generate_transformation_matrix(pos: &Vector3, rot: &Vector4) -> [[f32; 4]; 3] {
+    let mut matrix = [[0.0; 4]; 3];
+
+    matrix[0][0] = 1.0 - 2.0 * rot.y * rot.y - 2.0 * rot.z * rot.z;
+    matrix[1][0] = 2.0 * rot.x * rot.y + 2.0 * rot.w * rot.z;
+    matrix[2][0] = 2.0 * rot.x * rot.z - 2.0 * rot.w * rot.y;
+
+    matrix[0][1] = 2.0 * rot.x * rot.y - 2.0 * rot.w * rot.z;
+    matrix[1][1] = 1.0 - 2.0 * rot.x * rot.x - 2.0 * rot.z * rot.z;
+    matrix[2][1] = 2.0 * rot.y * rot.z + 2.0 * rot.w * rot.x;
+
+    matrix[0][2] = 2.0 * rot.x * rot.z + 2.0 * rot.w * rot.y;
+    matrix[1][2] = 2.0 * rot.y * rot.z - 2.0 * rot.w * rot.x;
+    matrix[2][2] = 1.0 - 2.0 * rot.x * rot.x - 2.0 * rot.y * rot.y;
+
+    matrix[0][3] = pos.x;
+    matrix[1][3] = pos.y;
+    matrix[2][3] = pos.z;
+
+    matrix
+}
+
+pub fn apply_transformation_matrix(vec: &Vector3, matrix: [[f32; 4]; 3]) -> Vector3 {
+    let mut result = Vector3 { x: 0.0, y: 0.0, z: 0.0 };
+
+    result.x = matrix[0][0] * vec.x + matrix[0][1] * vec.y + matrix[0][2] * vec.z + matrix[0][3];
+    result.y = matrix[1][0] * vec.x + matrix[1][1] * vec.y + matrix[1][2] * vec.z + matrix[1][3];
+    result.z = matrix[2][0] * vec.x + matrix[2][1] * vec.y + matrix[2][2] * vec.z + matrix[2][3];
+
+    result
+}
+
+pub fn vec2_diff(vec1: &Vector2, vec2: &Vector2) -> f32 {
+    let diff_x = vec2.x - vec1.x;
+    let diff_y = vec2.y - vec1.y;
+    (diff_x * diff_x + diff_y * diff_y).sqrt()
+}
+
+pub fn vec_translate(origin: &Vector3, angles: &Vector2, dist: f32) -> Vector3 {
+    let sp = (angles.x * (std::f32::consts::PI / 180.0)).sin();
+    let sy = (angles.y * (std::f32::consts::PI / 180.0)).sin();
+    let cp = (angles.x * (std::f32::consts::PI / 180.0)).cos();
+    let cy = (angles.y * (std::f32::consts::PI / 180.0)).cos();
+
+    let forward = Vector3 {
+        x: cp * cy,
+        y: cp * sy,
+        z: -sp,
+    };
+
+    Vector3 {
+        x: origin.x + forward.x * dist,
+        y: origin.y + forward.y * dist,
+        z: origin.z + forward.z * dist,
     }
 }
