@@ -51,6 +51,10 @@ impl Render {
             let bb_min = hitbox.min_bounds_2d;
             let bb_max = hitbox.max_bounds_2d;
     
+            if(bb_min.x < 0.0 || bb_min.y < 0.0) && (bb_max.x < 0.0 || bb_max.y < 0.0){
+                continue;
+            }
+
             let bb_min_pos = egui::Pos2::new(bb_min.x, bb_min.y);
             let bb_max_pos = egui::Pos2::new(bb_max.x, bb_max.y);
     
@@ -58,7 +62,10 @@ impl Render {
                 continue;
             }
     
-            let color = egui::Color32::from_rgba_premultiplied(255, 0, 0, 30); 
+            let mut color = egui::Color32::from_rgba_premultiplied(200, 0, 0, 1); 
+            if player.bspotted {
+                color = egui::Color32::from_rgba_premultiplied(0, 200, 0, 1); 
+            }
             
             let radius_min = hitbox.min_rad_2d;
             let radius_max = hitbox.max_rad_2d;

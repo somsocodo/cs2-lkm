@@ -44,7 +44,7 @@ pub fn cache_players(
                 let pawn_entry: usize = driver.read_mem(entity_list + (0x8 * ((pawn_handle & 0x7FFF) >> 9) + 0x10));
                 let current_pawn: usize = driver.read_mem(pawn_entry + (0x78 * (pawn_handle & 0x1FF)));
 
-                let player_base = PlayerBase::new(current_pawn, current_controller, i);
+                let player_base = PlayerBase::new(current_pawn, current_controller, i as u32);
                 if i < players_cache.len() {
                     players_cache[i] = player_base; 
                 } else {
@@ -67,6 +67,7 @@ pub fn update_players(
         let client_addr =  driver.read_module("libclient.so");
         let mut player_cache = Vec::new();
         let mut local_player: usize = 0;
+        let mut local_idx: u32 = 0;
 
         loop {
             let mut players = Vec::new();
@@ -94,6 +95,7 @@ pub fn update_players(
 
                     if driver.read_mem(current_controller + schemas::libclient_so::CBasePlayerController::m_bIsLocalPlayerController){
                         local_player = current_pawn;
+                        local_idx = player_base.idx;
                         continue;
                     }
 
@@ -104,14 +106,28 @@ pub fn update_players(
                     let name: CUtlString = driver.read_mem(current_controller + schemas::libclient_so::CBasePlayerController::m_iszPlayerName);
                     let feet_pos: Vector3 = driver.read_mem(current_pawn + schemas::libclient_so::C_BasePlayerPawn::m_vOldOrigin);
                     let mut eye_pos: Vector3 = feet_pos + driver.read_mem(current_pawn + schemas::libclient_so::C_BaseModelEntity::m_vecViewOffset);
+                    
                     eye_pos.z += 13.5; // For nametags only
                     let pos_2d = eye_pos.world_to_screen(view_matrix);
+                    let feetpos_2d = feet_pos.world_to_screen(view_matrix);
+
+                    if((pos_2d.x < 0.0 && pos_2d.y < 0.0) && (feetpos_2d.x < 0.0 && feetpos_2d.y < 0.0)) {
+                        continue;
+                    }
+
+                    let pawn_spotted_state: u32 = driver.read_mem(current_pawn + schemas::libclient_so::C_CSPlayerPawn::m_entitySpottedState + schemas::libclient_so::EntitySpottedState_t::m_bSpottedByMask);
+                    let local_spotted_state: u32 = driver.read_mem(local_player + schemas::libclient_so::C_CSPlayerPawn::m_entitySpottedState + schemas::libclient_so::EntitySpottedState_t::m_bSpottedByMask);
+                    
+                    let mut bspotted = false;
+                    if (pawn_spotted_state & (1 << (local_idx - 1)) != 0) || (local_spotted_state & (1 << (i - 1)) != 0) {
+                        bspotted = true;
+                    }
 
                     let scene_node: usize = driver.read_mem(current_pawn + schemas::libclient_so::C_BaseEntity::m_pGameSceneNode);
                     let bone_matrix: usize = driver.read_mem(scene_node + schemas::libclient_so::CSkeletonInstance::m_modelState + 0x80);
                     let view_angle: Vector2 = driver.read_mem(local_player + schemas::libclient_so::C_BasePlayerPawn::v_angle);
 
-                    let mut player = Player::new(name, health, eye_pos, pos_2d);
+                    let mut player = Player::new(name, bspotted, health, eye_pos, pos_2d);
                     player.read_bones(driver, bone_matrix, view_matrix);
                     player.read_hitboxes(driver, view_angle, view_matrix);
 

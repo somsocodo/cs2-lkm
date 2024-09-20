@@ -12,11 +12,11 @@ use super::CUtlString::CUtlString;
 pub struct PlayerBase {
     pub pawn: usize,
     pub controller: usize,
-    pub idx: usize
+    pub idx: u32
 }
 
 impl PlayerBase {
-    pub fn new(pawn: usize, controller: usize, idx: usize) -> Self {
+    pub fn new(pawn: usize, controller: usize, idx: u32) -> Self {
         PlayerBase {
             pawn,
             controller,
@@ -28,6 +28,7 @@ impl PlayerBase {
 pub struct Player {
     pub name: CUtlString,
     pub health: i32,
+    pub bspotted: bool,
     pub pos: Vector3,
     pub pos_2d: Vector2,
     pub bones_3d: [BoneData; 30],
@@ -36,10 +37,11 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn new(name: CUtlString, health: i32, pos: Vector3, pos_2d: Vector2) -> Self {
+    pub fn new(name: CUtlString, bspotted: bool, health: i32, pos: Vector3, pos_2d: Vector2) -> Self {
         Player {
             name,
             health,
+            bspotted,
             pos,
             pos_2d,
             bones_3d: [BoneData { pos: Vector3 { x: 0.0, y: 0.0, z: 0.0 }, scale: 0.0, rot: Vector4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 }}; 30],
