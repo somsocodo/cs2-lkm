@@ -141,7 +141,7 @@ pub fn update_players(
 
             player_sender.send(players).unwrap();
             player_barrier.wait();
-            thread::sleep(Duration::from_millis(1));
+            thread::sleep(Duration::from_millis(10));
         }
     })
 }

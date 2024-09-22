@@ -5,7 +5,7 @@ use egui_overlay::egui_window_glfw_passthrough;
 use egui::{Context, Color32, Pos2, Order, Sense, Vec2, FontFamily::Monospace};
 use crossbeam::channel::Receiver;
 
-use config::SharedConfig;
+use config::{SharedConfig, Config};
 use sdk::Player::Player;
 
 pub fn run_overlay(player_receiver: Receiver<Vec<Player>>, barrier: Arc<Barrier>, config: SharedConfig) {
@@ -23,21 +23,25 @@ pub struct Render {
 }
 
 impl Render {    
-    fn esp_overlay(&self, egui_context: &Context, nametags: bool) {
+    fn esp_overlay(&self, egui_context: &Context, config: &Config) {
         egui::Area::new("overlay")
             .interactable(false)
             .fixed_pos(Pos2::new(0.,0.))
             .order(Order::Background)
             .show(egui_context, |ui| {
-                ui.allocate_at_least(Vec2::new(1024.0, 768.0), Sense { focusable: false, drag: false, click: false });
+                ui.allocate_at_least(Vec2::new(config.window_size.0 as f32, config.window_size.1 as f32), Sense { focusable: false, drag: false, click: false });
                 let painter = ui.painter();
                 if let Ok(players) = self.player_receiver.recv() {
                     for player in players.iter() {
-                        if nametags {
-                            self.draw_nametags(player, ui, painter);
+                        if config.esp_hitboxes {
+                            self.draw_hitboxes(player, ui, painter);
                         }
-                        //self.draw_bones(player, ui, painter);
-                        self.draw_hitboxes(player, ui, painter);
+                        if config.esp_bones {
+                            self.draw_bones(player, ui, painter);
+                        }
+                        if config.esp_nametags {
+                            self.draw_nametags(player, ui, painter);
+                        }      
                     }
                 }
             });
@@ -160,10 +164,10 @@ impl EguiOverlay for Render {
         _default_gfx_backend: &mut DefaultGfxBackend,
         glfw_backend: &mut egui_window_glfw_passthrough::GlfwBackend,
     ) {
-        glfw_backend.window.set_pos(0, 35);
-        glfw_backend.window.set_size(1024, 768);
-
         let mut config = self.config.lock().unwrap();
+
+        glfw_backend.window.set_pos(0, 35); //35 for cs2 windowed
+        glfw_backend.window.set_size(config.window_size.0, config.window_size.1);
 
         if config.show_gui {
             if !glfw_backend.focused {
@@ -176,11 +180,13 @@ impl EguiOverlay for Render {
                 ui.set_width(500.0);
                 ui.set_height(200.0);
 
-                ui.checkbox(&mut config.nametags, "Nametags");
+                ui.checkbox(&mut config.esp_nametags, "esp_nametags");
+                ui.checkbox(&mut config.esp_hitboxes, "esp_hitboxes");
+                ui.checkbox(&mut config.esp_bones, "esp_bones");
             });
         }
         
-        self.esp_overlay(egui_context, config.nametags);
+        self.esp_overlay(egui_context, &config);
 
         if egui_context.wants_pointer_input() || egui_context.wants_keyboard_input() {
             glfw_backend.set_passthrough(false);
