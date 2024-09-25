@@ -23,7 +23,7 @@ use sdk::Player::PlayerBase;
 use sdk::Player::Player;
 
 mod config;
-use config::{SharedConfig, init_config};
+use config::{init_config, init_keystate, SharedConfig, SharedKeyState};
 
 mod features {pub mod combat;}
 use features::{ combat };
@@ -41,7 +41,8 @@ fn main() {
     let _pid = driver.set_task("cs2");
 
     let config = init_config();
-    key_listener(config.clone());
+    let keystate = init_keystate();
+    key_listener(keystate.clone());
         
     let (player_cache_sender, player_cache_receiver) = channel::unbounded::<Vec<PlayerBase>>();
     let (player_sender, player_receiver) = channel::unbounded::<Vec<Player>>();
@@ -59,9 +60,10 @@ fn main() {
         
     let combat_handle = combat::run_combat(
             driver.clone(),
+            config.clone(),
             player_receiver.clone());
 
-    render::run_overlay(player_receiver.clone(), Arc::clone(&player_barrier), config.clone());
+    render::run_overlay(player_receiver.clone(), Arc::clone(&player_barrier), keystate.clone(), config.clone());
 
     cache_players_handle.join().unwrap();
     update_players_handle.join().unwrap();
@@ -70,14 +72,14 @@ fn main() {
 }
 
 
-fn key_listener(config: SharedConfig) -> () {
+fn key_listener(keystate: SharedKeyState) -> () {
     thread::spawn(move || {
         if let Err(error) = listen(move |event: Event| {
             match event.event_type {
                 EventType::KeyPress(key) => {
                     if key == Key::Insert {
-                        let mut config = config.lock().unwrap();
-                        config.show_gui = !config.show_gui;
+                        let mut keystate = keystate.write().unwrap();
+                        keystate.show_gui = !keystate.show_gui;
                     }
                 },
                 _ => {}

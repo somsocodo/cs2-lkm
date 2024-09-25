@@ -8,38 +8,45 @@ use crossbeam::channel::Receiver;
 use config::{SharedConfig, Config};
 use sdk::Player::Player;
 
-pub fn run_overlay(player_receiver: Receiver<Vec<Player>>, barrier: Arc<Barrier>, config: SharedConfig) {
+use crate::config::SharedKeyState;
+
+pub fn run_overlay(player_receiver: Receiver<Vec<Player>>, barrier: Arc<Barrier>, shared_keystate: SharedKeyState, shared_config: SharedConfig) {
+    
     egui_overlay::start(Render { 
         player_receiver, 
         barrier,
-        config
+        shared_keystate,
+        shared_config,
+        config: Config::new()
     });
 }
 
 pub struct Render {
     pub player_receiver: Receiver<Vec<Player>>,
     pub barrier: Arc<Barrier>,
-    pub config: SharedConfig
+    pub shared_keystate: SharedKeyState,
+    pub shared_config: SharedConfig,
+    pub config: Config
 }
 
 impl Render {    
-    fn esp_overlay(&self, egui_context: &Context, config: &Config) {
+    fn esp_overlay(&self, egui_context: &Context) {
         egui::Area::new("overlay")
             .interactable(false)
             .fixed_pos(Pos2::new(0.,0.))
             .order(Order::Background)
             .show(egui_context, |ui| {
-                ui.allocate_at_least(Vec2::new(config.window_size.0 as f32, config.window_size.1 as f32), Sense { focusable: false, drag: false, click: false });
+                ui.allocate_at_least(Vec2::new(self.config.window_size.0 as f32, self.config.window_size.1 as f32), Sense { focusable: false, drag: false, click: false });
                 let painter = ui.painter();
                 if let Ok(players) = self.player_receiver.recv() {
                     for player in players.iter() {
-                        if config.esp_hitboxes {
+                        if self.config.esp_hitboxes {
                             self.draw_hitboxes(player, ui, painter);
                         }
-                        if config.esp_bones {
+                        if self.config.esp_bones {
                             self.draw_bones(player, ui, painter);
                         }
-                        if config.esp_nametags {
+                        if self.config.esp_nametags {
                             self.draw_nametags(player, ui, painter);
                         }      
                     }
@@ -163,29 +170,33 @@ impl EguiOverlay for Render {
         _default_gfx_backend: &mut DefaultGfxBackend,
         glfw_backend: &mut egui_window_glfw_passthrough::GlfwBackend,
     ) {
-        let mut config = self.config.lock().unwrap();
-
+        let keystate = self.shared_keystate.read().unwrap();
+        
         glfw_backend.window.set_pos(0, 35); //35 for cs2 windowed
-        glfw_backend.window.set_size(config.window_size.0, config.window_size.1);
+        glfw_backend.window.set_size(self.config.window_size.0, self.config.window_size.1);
 
-        if config.show_gui {
+        if keystate.show_gui {
+            let mut edit_config = self.config;
             if !glfw_backend.focused {
                 glfw_backend.window.focus();
             }
-            
             egui::Window::new("gui")
             .resizable(false)
             .show(egui_context, |ui| {
                 ui.set_width(500.0);
                 ui.set_height(200.0);
 
-                ui.checkbox(&mut config.esp_nametags, "esp_nametags");
-                ui.checkbox(&mut config.esp_hitboxes, "esp_hitboxes");
-                ui.checkbox(&mut config.esp_bones, "esp_bones");
+                ui.checkbox(&mut edit_config.esp_nametags, "esp_nametags");
+                ui.checkbox(&mut edit_config.esp_hitboxes, "esp_hitboxes");
+                ui.checkbox(&mut edit_config.esp_bones, "esp_bones");
             });
+            if edit_config != self.config {
+                self.config = edit_config;
+                let mut new_config = self.shared_config.write().unwrap();
+            }
         }
         
-        self.esp_overlay(egui_context, &config);
+        self.esp_overlay(egui_context);
 
         if egui_context.wants_pointer_input() || egui_context.wants_keyboard_input() {
             glfw_backend.set_passthrough(false);

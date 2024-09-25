@@ -1,9 +1,8 @@
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub struct Config {
     pub window_size: (i32, i32),
-    pub show_gui: bool,
     pub esp_nametags: bool,
     pub esp_hitboxes: bool,
     pub esp_bones: bool
@@ -13,7 +12,6 @@ impl Config {
     pub fn new() -> Self {
         Self {
             window_size: (1024, 768),
-            show_gui: true,
             esp_nametags: true,
             esp_hitboxes: true,
             esp_bones: false
@@ -21,8 +19,27 @@ impl Config {
     }
 }
 
-pub type SharedConfig = Arc<Mutex<Config>>;
+pub type SharedConfig = Arc<RwLock<Config>>;
 
 pub fn init_config() -> SharedConfig {
-    Arc::new(Mutex::new(Config::new()))
+    Arc::new(RwLock::new(Config::new()))
+}
+
+#[derive(Clone)]
+pub struct KeyState {
+    pub show_gui: bool,
+}
+
+impl KeyState {
+    pub fn new() -> Self {
+        Self {
+            show_gui: true,
+        }
+    }
+}
+
+pub type SharedKeyState = Arc<RwLock<KeyState>>;
+
+pub fn init_keystate() -> SharedKeyState {
+    Arc::new(RwLock::new(KeyState::new()))
 }
