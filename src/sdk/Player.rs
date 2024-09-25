@@ -25,6 +25,7 @@ impl PlayerBase {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct Player {
     pub name: CUtlString,
     pub health: i32,
@@ -124,7 +125,7 @@ impl Player {
         }
     }
 
-    pub fn read_hitboxes(&mut self, driver: Driver, view_angle: Vector2, view_matrix: [[f32; 4]; 4]){
+    pub fn read_hitboxes(&mut self, view_angle: Vector2, view_matrix: [[f32; 4]; 4]){
         for (i, hitbox) in HITBOXES.iter().enumerate() {
             let bone = self.bones_3d[hitbox.bone_idx];
             let transformation_matrix = generate_transformation_matrix(&bone.pos, &bone.rot);

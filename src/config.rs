@@ -5,7 +5,8 @@ pub struct Config {
     pub window_size: (i32, i32),
     pub esp_nametags: bool,
     pub esp_hitboxes: bool,
-    pub esp_bones: bool
+    pub esp_bones: bool,
+    pub aim_enabled: bool
 }
 
 impl Config {
@@ -14,7 +15,8 @@ impl Config {
             window_size: (1024, 768),
             esp_nametags: true,
             esp_hitboxes: true,
-            esp_bones: false
+            esp_bones: false,
+            aim_enabled: true
         }
     }
 }
@@ -33,7 +35,7 @@ pub struct KeyState {
 impl KeyState {
     pub fn new() -> Self {
         Self {
-            show_gui: true,
+            show_gui: false,
         }
     }
 }

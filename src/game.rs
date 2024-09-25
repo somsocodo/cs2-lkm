@@ -1,4 +1,3 @@
-use std::sync::{Arc, Barrier};
 use std::thread;
 use std::time::Duration;
 use crossbeam::channel::Sender;
@@ -60,8 +59,7 @@ pub fn cache_players(
 pub fn update_players(
     driver: Driver, 
     player_cache_receiver: Receiver<Vec<PlayerBase>>,
-    player_sender: Sender<Vec<Player>>,
-    player_barrier: Arc<Barrier>
+    player_sender: Sender<Vec<Player>>
 ) -> thread::JoinHandle<()> {
     thread::spawn(move || {
         let client_addr =  driver.read_module("libclient.so");
@@ -129,7 +127,7 @@ pub fn update_players(
 
                     let mut player = Player::new(name, bspotted, health, eye_pos, pos_2d);
                     player.read_bones(driver, bone_matrix, view_matrix);
-                    player.read_hitboxes(driver, view_angle, view_matrix);
+                    player.read_hitboxes(view_angle, view_matrix);
 
                     if i < players.len() {
                         players[i] = player; 
@@ -138,9 +136,9 @@ pub fn update_players(
                     }
 
             }
-
             player_sender.send(players).unwrap();
-            thread::sleep(Duration::from_millis(10));
+            
+            thread::sleep(Duration::from_millis(3));
         }
     })
 }

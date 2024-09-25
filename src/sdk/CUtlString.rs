@@ -2,6 +2,7 @@ use std::ffi::CStr;
 use libc::c_char;
 use std::str;
 
+#[derive(Copy, Clone)]
 pub struct CUtlString {
     text: [c_char; 512]
 }

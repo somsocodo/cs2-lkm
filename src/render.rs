@@ -1,4 +1,3 @@
-use std::sync::{Arc, Barrier};
 use egui_overlay::EguiOverlay;
 use egui_render_three_d::ThreeDBackend as DefaultGfxBackend;
 use egui_overlay::egui_window_glfw_passthrough;
@@ -10,11 +9,10 @@ use sdk::Player::Player;
 
 use crate::config::SharedKeyState;
 
-pub fn run_overlay(player_receiver: Receiver<Vec<Player>>, barrier: Arc<Barrier>, shared_keystate: SharedKeyState, shared_config: SharedConfig) {
+pub fn run_overlay(player_receiver: Receiver<Vec<Player>>, shared_keystate: SharedKeyState, shared_config: SharedConfig) {
     
     egui_overlay::start(Render { 
-        player_receiver, 
-        barrier,
+        player_receiver,
         shared_keystate,
         shared_config,
         config: Config::new()
@@ -23,7 +21,6 @@ pub fn run_overlay(player_receiver: Receiver<Vec<Player>>, barrier: Arc<Barrier>
 
 pub struct Render {
     pub player_receiver: Receiver<Vec<Player>>,
-    pub barrier: Arc<Barrier>,
     pub shared_keystate: SharedKeyState,
     pub shared_config: SharedConfig,
     pub config: Config
@@ -44,7 +41,7 @@ impl Render {
                             self.draw_hitboxes(player, ui, painter);
                         }
                         if self.config.esp_bones {
-                            self.draw_bones(player, ui, painter);
+                            self.draw_bones(player, painter);
                         }
                         if self.config.esp_nametags {
                             self.draw_nametags(player, ui, painter);
@@ -55,9 +52,7 @@ impl Render {
     }
 
     fn draw_hitboxes(&self, player: &Player, ui: &egui::Ui, painter: &egui::Painter) {
-        for hitbox in player.hitboxes.iter() {
-            let bone_pos = player.bones_2d[hitbox.bone_idx];
-            
+        for hitbox in player.hitboxes.iter() {            
             let bb_min = hitbox.min_bounds_2d;
             let bb_max = hitbox.max_bounds_2d;
     
@@ -86,7 +81,7 @@ impl Render {
         }
     }
 
-    fn draw_bones(&self, player: &Player, ui: &egui::Ui, painter: &egui::Painter) {
+    fn draw_bones(&self, player: &Player, painter: &egui::Painter) {
         for bone in player.bones_2d.iter() {
             if bone.x == -99.0 && bone.y == -99.0 {
                 continue;
@@ -189,10 +184,12 @@ impl EguiOverlay for Render {
                 ui.checkbox(&mut edit_config.esp_nametags, "esp_nametags");
                 ui.checkbox(&mut edit_config.esp_hitboxes, "esp_hitboxes");
                 ui.checkbox(&mut edit_config.esp_bones, "esp_bones");
+                ui.checkbox(&mut edit_config.aim_enabled, "aim_enabled");
             });
             if edit_config != self.config {
                 self.config = edit_config;
                 let mut new_config = self.shared_config.write().unwrap();
+                *new_config = edit_config;
             }
         }
         
