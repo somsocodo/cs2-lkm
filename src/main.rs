@@ -25,6 +25,9 @@ use sdk::Player::Player;
 mod config;
 use config::{SharedConfig, init_config};
 
+mod features {pub mod combat;}
+use features::{ combat };
+
 mod cs2_dumper {pub mod offsets; pub mod libclient_so;}
 
 fn main() {
@@ -36,6 +39,9 @@ fn main() {
     };
 
     let _pid = driver.set_task("cs2");
+
+    let config = init_config();
+    key_listener(config.clone());
         
     let (player_cache_sender, player_cache_receiver) = channel::unbounded::<Vec<PlayerBase>>();
     let (player_sender, player_receiver) = channel::unbounded::<Vec<Player>>();
@@ -50,14 +56,16 @@ fn main() {
         player_cache_receiver, 
         player_sender, 
         Arc::clone(&player_barrier));
+        
+    let combat_handle = combat::run_combat(
+            driver.clone(),
+            player_receiver.clone());
 
-    let config = init_config();
-    key_listener(config.clone());
-
-    render::run_overlay(player_receiver, Arc::clone(&player_barrier), config.clone());
+    render::run_overlay(player_receiver.clone(), Arc::clone(&player_barrier), config.clone());
 
     cache_players_handle.join().unwrap();
     update_players_handle.join().unwrap();
+    combat_handle.join().unwrap();
 
 }
 

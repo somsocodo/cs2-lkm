@@ -45,7 +45,6 @@ impl Render {
                     }
                 }
             });
-            self.barrier.wait();
     }
 
     fn draw_hitboxes(&self, player: &Player, ui: &egui::Ui, painter: &egui::Painter) {

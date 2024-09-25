@@ -111,7 +111,7 @@ pub fn update_players(
                     let pos_2d = eye_pos.world_to_screen(view_matrix);
                     let feetpos_2d = feet_pos.world_to_screen(view_matrix);
 
-                    if((pos_2d.x < 0.0 && pos_2d.y < 0.0) && (feetpos_2d.x < 0.0 && feetpos_2d.y < 0.0)) {
+                    if (pos_2d.x < 0.0 && pos_2d.y < 0.0) && (feetpos_2d.x < 0.0 && feetpos_2d.y < 0.0) {
                         continue;
                     }
 
@@ -140,7 +140,6 @@ pub fn update_players(
             }
 
             player_sender.send(players).unwrap();
-            player_barrier.wait();
             thread::sleep(Duration::from_millis(10));
         }
     })

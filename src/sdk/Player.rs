@@ -36,6 +36,34 @@ pub struct Player {
     pub hitboxes: [HitboxData; 30]
 }
 
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            name: CUtlString::default(),
+            health: 0,
+            bspotted: false,
+            pos: Vector3 { x: 0.0, y: 0.0, z: 0.0 },
+            pos_2d: Vector2 { x: -99.0, y: -99.0 },
+            bones_3d: [BoneData {
+                pos: Vector3 { x: 0.0, y: 0.0, z: 0.0 },
+                scale: 0.0,
+                rot: Vector4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 }
+            }; 30],
+            bones_2d: [Vector2 { x: -99.0, y: -99.0 }; 30],
+            hitboxes: [HitboxData {
+                min_bounds: Vector3 { x: 0.0, y: 0.0, z: 0.0 },
+                max_bounds: Vector3 { x: 0.0, y: 0.0, z: 0.0 },
+                shape_radius: 0.0,
+                bone_idx: 0,
+                min_bounds_2d: Vector2 { x: 0.0, y: 0.0 },
+                max_bounds_2d: Vector2 { x: 0.0, y: 0.0 },
+                min_rad_2d: 0.0,
+                max_rad_2d: 0.0
+            }; 30],
+        }
+    }
+}
+
 impl Player {
     pub fn new(name: CUtlString, bspotted: bool, health: i32, pos: Vector3, pos_2d: Vector2) -> Self {
         Player {

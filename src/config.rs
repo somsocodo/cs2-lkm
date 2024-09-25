@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -13,7 +13,7 @@ impl Config {
     pub fn new() -> Self {
         Self {
             window_size: (1024, 768),
-            show_gui: false,
+            show_gui: true,
             esp_nametags: true,
             esp_hitboxes: true,
             esp_bones: false
