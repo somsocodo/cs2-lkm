@@ -6,9 +6,8 @@ use crossbeam::channel::Receiver;
 
 use driver::Driver;
 use crate::config::SharedConfig;
-use sdk::CUtlString::CUtlString;
-use sdk::Player::Player;
-use sdk::Player::PlayerBase;
+use sdk::CUtl::CUtlString;
+use sdk::Player::{ PlayerBase, SharedPlayerBase, Player};
 use sdk::Vector::Vector3;
 
 use cs2_dumper::offsets::cs2_dumper::offsets;
@@ -59,6 +58,7 @@ pub fn cache_players(
 
 pub fn update_players(
     driver: Driver, 
+    shared_local_player: SharedPlayerBase,
     shared_config: SharedConfig,
     player_cache_receiver: Receiver<Vec<PlayerBase>>,
     player_sender: Sender<Vec<Player>>
@@ -112,6 +112,8 @@ pub fn update_players(
                     }
 
                     if driver.read_mem(current_controller + schemas::libclient_so::CBasePlayerController::m_bIsLocalPlayerController){
+                        let mut local_player_edit = shared_local_player.write().unwrap();
+                        *local_player_edit = player_base.clone();
                         local_player = current_pawn;
                         local_idx = player_base.idx;
                         continue;
@@ -151,7 +153,17 @@ pub fn update_players(
                     let bone_matrix: usize = driver.read_mem(scene_node + schemas::libclient_so::CSkeletonInstance::m_modelState + 0x80);
                     let view_angle: Vector2 = driver.read_mem(local_player + schemas::libclient_so::C_BasePlayerPawn::v_angle);
 
-                    let mut player = Player::new(name, bspotted, in_cross, health, eye_pos, pos_2d);
+                    let mut player = Player::new(
+                        current_pawn, 
+                        current_controller, 
+                        player_base.idx,
+                        name, 
+                        bspotted, 
+                        in_cross, 
+                        health, 
+                        eye_pos, 
+                        pos_2d);
+                    
                     player.read_bones(driver, bone_matrix, view_matrix);
                     player.read_hitboxes(view_angle, view_matrix);
 

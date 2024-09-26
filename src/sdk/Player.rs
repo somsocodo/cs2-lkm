@@ -1,4 +1,5 @@
 use driver::Driver;
+use std::sync::{Arc, RwLock};
 use super::Vector::Vector4;
 use super::Vector::Vector3;
 use super::Vector::Vector2;
@@ -6,7 +7,7 @@ use super::Vector::generate_transformation_matrix;
 use super::Vector::apply_transformation_matrix;
 use super::Vector::vec_translate;
 use super::Vector::vec2_diff;
-use super::CUtlString::CUtlString;
+use super::CUtl::CUtlString;
 
 #[derive(Copy, Clone)]
 pub struct PlayerBase {
@@ -25,8 +26,23 @@ impl PlayerBase {
     }
 }
 
+impl Default for PlayerBase {
+    fn default() -> Self {
+        Self {
+            pawn: 0,
+            controller: 0,
+            idx: 0
+        }
+    }
+}
+
+pub type SharedPlayerBase = Arc<RwLock<PlayerBase>>;
+
 #[derive(Copy, Clone)]
 pub struct Player {
+    pub pawn: usize,
+    pub controller: usize,
+    pub idx: u32,
     pub name: CUtlString,
     pub health: i32,
     pub bspotted: bool,
@@ -41,6 +57,9 @@ pub struct Player {
 impl Default for Player {
     fn default() -> Self {
         Self {
+            pawn: 0,
+            controller: 0,
+            idx: 0,
             name: CUtlString::default(),
             health: 0,
             bspotted: false,
@@ -68,8 +87,11 @@ impl Default for Player {
 }
 
 impl Player {
-    pub fn new(name: CUtlString, bspotted: bool, in_cross:bool, health: i32, pos: Vector3, pos_2d: Vector2) -> Self {
+    pub fn new(pawn: usize, controller: usize, idx: u32, name: CUtlString, bspotted: bool, in_cross:bool, health: i32, pos: Vector3, pos_2d: Vector2) -> Self {
         Player {
+            pawn,
+            controller,
+            idx,
             name,
             health,
             bspotted,

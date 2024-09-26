@@ -27,6 +27,12 @@ impl Default for Vector2 {
     }
 }
 
+impl Vector2 {
+    pub fn is_zero(&self) -> bool {
+        self.x == 0.0 && self.y == 0.0
+    }
+}
+
 impl Default for Vector3 {
     fn default() -> Self {
         Vector3 { x: 0.0, y: 0.0, z: 0.0 }
