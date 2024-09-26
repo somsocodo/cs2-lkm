@@ -1,17 +1,26 @@
 use std::thread;
 use std::time::Duration;
 use crossbeam::channel::Receiver;
-
+use rdev::{simulate, Button, EventType, SimulateError};
 
 use driver::Driver;
 use libc::INT_MAX;
 use sdk::Player::Player;
 
-use crate::config::SharedConfig;
+use crate::config::{ SharedKeyState, SharedConfig };
 
+fn click() {
+    match simulate(&EventType::ButtonPress(Button::Left)) {
+        Ok(()) => simulate(&EventType::ButtonRelease(Button::Left)).unwrap(),
+        Err(SimulateError) => {
+            println!("Failed click.");
+        }
+    }
+}
 
 pub fn run_combat(
     driver: Driver, 
+    shared_keystate: SharedKeyState,
     shared_config: SharedConfig,
     player_receiver: Receiver<Vec<Player>>
 ) -> thread::JoinHandle<()> {
@@ -21,6 +30,11 @@ pub fn run_combat(
             let config = {
                 let config_read = shared_config.read().unwrap();
                 config_read.clone()
+            };
+
+            let keystate = {
+                let keystate_read = shared_keystate.read().unwrap();
+                keystate_read.clone()
             };
 
             if !config.aim_enabled {
@@ -33,6 +47,10 @@ pub fn run_combat(
                 for player in players.iter() {
                     if player.health == 0 || !player.bspotted {
                         continue;
+                    }
+
+                    if keystate.trigger && player.in_cross{
+                        click();
                     }
                 
                     let dist_x = (window_center.0 - player.bones_2d[0].x).abs();
@@ -50,7 +68,7 @@ pub fn run_combat(
                 continue;
             }
 
-            println!("target: {} | {}", target.name.to_str(), closest_dist);
+            println!("target: {} {} | {}", target.name.to_str(), target.in_cross, closest_dist);
 
             thread::sleep(Duration::from_millis(1));
         }

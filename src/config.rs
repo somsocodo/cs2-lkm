@@ -30,12 +30,14 @@ pub fn init_config() -> SharedConfig {
 #[derive(Clone)]
 pub struct KeyState {
     pub show_gui: bool,
+    pub trigger: bool
 }
 
 impl KeyState {
     pub fn new() -> Self {
         Self {
             show_gui: false,
+            trigger: false,
         }
     }
 }

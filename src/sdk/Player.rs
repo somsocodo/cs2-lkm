@@ -30,6 +30,7 @@ pub struct Player {
     pub name: CUtlString,
     pub health: i32,
     pub bspotted: bool,
+    pub in_cross: bool,
     pub pos: Vector3,
     pub pos_2d: Vector2,
     pub bones_3d: [BoneData; 30],
@@ -43,6 +44,7 @@ impl Default for Player {
             name: CUtlString::default(),
             health: 0,
             bspotted: false,
+            in_cross: false,
             pos: Vector3 { x: 0.0, y: 0.0, z: 0.0 },
             pos_2d: Vector2 { x: -99.0, y: -99.0 },
             bones_3d: [BoneData {
@@ -66,11 +68,12 @@ impl Default for Player {
 }
 
 impl Player {
-    pub fn new(name: CUtlString, bspotted: bool, health: i32, pos: Vector3, pos_2d: Vector2) -> Self {
+    pub fn new(name: CUtlString, bspotted: bool, in_cross:bool, health: i32, pos: Vector3, pos_2d: Vector2) -> Self {
         Player {
             name,
             health,
             bspotted,
+            in_cross,
             pos,
             pos_2d,
             bones_3d: [BoneData { pos: Vector3 { x: 0.0, y: 0.0, z: 0.0 }, scale: 0.0, rot: Vector4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 }}; 30],

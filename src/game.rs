@@ -71,6 +71,11 @@ pub fn update_players(
             let mut players = Vec::new();
             
             let view_matrix: [[f32; 4]; 4] =  driver.read_mem(client_addr + offsets::libclient_so::dwViewMatrix);
+            
+            let entity_list: usize = driver.read_mem(client_addr + offsets::libclient_so::dwEntityList);
+            let cross_pawn_idx: usize = driver.read_mem(local_player + schemas::libclient_so::C_CSPlayerPawnBase::m_iIDEntIndex);
+            let cross_pawn_entry: usize = driver.read_mem(entity_list + (0x8 * ((cross_pawn_idx & 0x7FFF) >> 9) + 0x10));
+            let cross_pawn: usize = driver.read_mem(cross_pawn_entry + (0x78 * (cross_pawn_idx & 0x1FF)));
 
             if let Ok(players_cache_channel) = player_cache_receiver.try_recv() {
                 player_cache.clear();
@@ -121,11 +126,17 @@ pub fn update_players(
                         bspotted = true;
                     }
 
+                    let mut in_cross = false;
+                    if current_pawn == cross_pawn{
+                        bspotted = true;
+                        in_cross = true;
+                    }    
+
                     let scene_node: usize = driver.read_mem(current_pawn + schemas::libclient_so::C_BaseEntity::m_pGameSceneNode);
                     let bone_matrix: usize = driver.read_mem(scene_node + schemas::libclient_so::CSkeletonInstance::m_modelState + 0x80);
                     let view_angle: Vector2 = driver.read_mem(local_player + schemas::libclient_so::C_BasePlayerPawn::v_angle);
 
-                    let mut player = Player::new(name, bspotted, health, eye_pos, pos_2d);
+                    let mut player = Player::new(name, bspotted, in_cross, health, eye_pos, pos_2d);
                     player.read_bones(driver, bone_matrix, view_matrix);
                     player.read_hitboxes(view_angle, view_matrix);
 

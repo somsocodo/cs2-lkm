@@ -6,7 +6,7 @@ extern crate egui;
 extern crate egui_overlay;
 extern crate egui_render_three_d;
 extern crate rdev;
-use rdev::{listen, Event, EventType, Key};
+use rdev::{listen, Event, EventType, Key, Button};
 
 extern crate crossbeam;
 use crossbeam::channel;
@@ -57,6 +57,7 @@ fn main() {
         
     let combat_handle = combat::run_combat(
             driver.clone(),
+            keystate.clone(),
             config.clone(),
             player_receiver.clone());
 
@@ -77,6 +78,18 @@ fn key_listener(keystate: SharedKeyState) -> () {
                     if key == Key::Insert {
                         let mut keystate = keystate.write().unwrap();
                         keystate.show_gui = !keystate.show_gui;
+                    }
+                },
+                EventType::ButtonPress(button) => {
+                    if button == Button::Unknown(8) {
+                        let mut keystate = keystate.write().unwrap();
+                        keystate.trigger = true;
+                    }
+                },
+                EventType::ButtonRelease(button) => {
+                    if button == Button::Unknown(8) {
+                        let mut keystate = keystate.write().unwrap();
+                        keystate.trigger = false;
                     }
                 },
                 _ => {}
