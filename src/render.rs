@@ -82,15 +82,69 @@ impl Render {
     }
 
     fn draw_bones(&self, player: &Player, painter: &egui::Painter) {
-        for bone in player.bones_2d.iter() {
-            if bone.x == -99.0 && bone.y == -99.0 {
+        let bone_hierarchy = vec![
+            (0, 1),  // Head to Neck
+            (1, 2),  // Neck to Spine 3
+            (2, 3),  // Spine 3 to Spine 2
+            (3, 4),  // Spine 2 to Spine 1
+            (4, 5),  // Spine 1 to Spine 0
+            (5, 6),  // Spine 0 to Hip
+    
+            // Left arm
+            (1, 7),  // Neck to Left Shoulder
+            (7, 8),  // Left Shoulder to Left Arm
+            (8, 9),  // Left Arm to Left Hand
+    
+            // Right arm
+            (1, 10), // Neck to Right Shoulder
+            (10, 11), // Right Shoulder to Right Arm
+            (11, 12), // Right Arm to Right Hand
+    
+            // Left leg
+            (6, 13), // Hip to Left Hip
+            (13, 14), // Left Hip to Left Knee
+            (14, 15), // Left Knee to Left Foot
+    
+            // Right leg
+            (6, 16),  // Hip to Right Hip
+            (16, 17), // Right Hip to Right Knee
+            (17, 18), // Right Knee to Right Foot
+        ];
+    
+        let color = egui::Color32::from_rgb(255, 255, 255);
+
+        if player.hitboxes.len() > 0 {
+            let head_position = player.bones_2d[0];
+            let head_radius = player.hitboxes[0].max_rad_2d / 1.5;
+    
+            if head_position.x != -99.0 && head_position.y != -99.0 {
+                painter.circle_stroke(
+                    egui::Pos2::new(head_position.x, head_position.y), 
+                    head_radius, 
+                    (2.0, color)
+                );
+            }
+        }
+    
+        for &(start_idx, end_idx) in bone_hierarchy.iter() {
+            if start_idx >= player.bones_2d.len() || end_idx >= player.bones_2d.len() {
                 continue;
             }
     
-            let radius = 3.0;
-            let color = egui::Color32::from_rgb(255, 0, 0);
+            let bone_start = player.bones_2d[start_idx];
+            let bone_end = player.bones_2d[end_idx];
     
-            painter.circle_filled(egui::Pos2::new(bone.x, bone.y), radius, color);
+            if (bone_start.x == -99.0 && bone_start.y == -99.0) || 
+                (bone_end.x == -99.0 && bone_end.y == -99.0) ||
+                (bone_start.x == 0.0 && bone_start.y == 0.0) ||
+                (bone_end.x == 0.0 && bone_end.y == 0.0) {
+                continue;
+            }
+    
+            painter.line_segment(
+                [egui::Pos2::new(bone_start.x, bone_start.y), egui::Pos2::new(bone_end.x, bone_end.y)], 
+                (2.0, color)
+            );
         }
     }
 

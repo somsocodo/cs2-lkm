@@ -23,7 +23,7 @@ impl Config {
             gui_misc: true,
             esp_nametags: true,
             esp_hitboxes: true,
-            esp_bones: false,
+            esp_bones: true,
             aim_enabled: true,
             trigger_enabled: true,
             ignore_team: true
