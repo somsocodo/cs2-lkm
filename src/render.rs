@@ -171,35 +171,52 @@ impl EguiOverlay for Render {
         glfw_backend.window.set_size(self.config.window_size.0, self.config.window_size.1);
 
         if keystate.show_gui {
+            glfw_backend.set_passthrough(false);
             let mut edit_config = self.config;
             if !glfw_backend.focused {
                 glfw_backend.window.focus();
             }
-            egui::Window::new("gui")
-            .resizable(false)
+            egui::Window::new("modules")
+            .resizable(true)
             .show(egui_context, |ui| {
-                ui.set_width(500.0);
-                ui.set_height(200.0);
-
-                ui.checkbox(&mut edit_config.esp_nametags, "esp_nametags");
-                ui.checkbox(&mut edit_config.esp_hitboxes, "esp_hitboxes");
-                ui.checkbox(&mut edit_config.esp_bones, "esp_bones");
-                ui.checkbox(&mut edit_config.aim_enabled, "aim_enabled");
+                ui.checkbox(&mut edit_config.gui_visuals, "gui_visuals");
+                ui.checkbox(&mut edit_config.gui_combat, "gui_combat");
             });
+            if edit_config.gui_visuals{
+                egui::Window::new("visuals")
+                .resizable(true)
+                .show(egui_context, |ui| {
+                    ui.checkbox(&mut edit_config.esp_nametags, "esp_nametags");
+                    ui.checkbox(&mut edit_config.esp_hitboxes, "esp_hitboxes");
+                    ui.checkbox(&mut edit_config.esp_bones, "esp_bones");
+                });
+            }
+            if edit_config.gui_combat{
+                egui::Window::new("combat")
+                .resizable(true)
+                .show(egui_context, |ui| {
+                    ui.checkbox(&mut edit_config.aim_enabled, "aim_enabled");
+                    ui.checkbox(&mut edit_config.trigger_enabled, "trigger_enabled");
+                });
+            }
+            if edit_config.gui_misc{
+                egui::Window::new("misc")
+                .resizable(true)
+                .show(egui_context, |ui| {
+                    ui.checkbox(&mut edit_config.ignore_team, "ignore_team");
+                });
+            }
             if edit_config != self.config {
                 self.config = edit_config;
                 let mut new_config = self.shared_config.write().unwrap();
                 *new_config = edit_config;
             }
+        } else {
+            glfw_backend.set_passthrough(true);
         }
         
         self.esp_overlay(egui_context);
 
-        if egui_context.wants_pointer_input() || egui_context.wants_keyboard_input() {
-            glfw_backend.set_passthrough(false);
-        } else {
-            glfw_backend.set_passthrough(true)
-        }
         egui_context.request_repaint();
     }
 }

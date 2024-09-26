@@ -5,6 +5,7 @@ use crossbeam::channel::Receiver;
 
 
 use driver::Driver;
+use crate::config::SharedConfig;
 use sdk::CUtlString::CUtlString;
 use sdk::Player::Player;
 use sdk::Player::PlayerBase;
@@ -58,6 +59,7 @@ pub fn cache_players(
 
 pub fn update_players(
     driver: Driver, 
+    shared_config: SharedConfig,
     player_cache_receiver: Receiver<Vec<PlayerBase>>,
     player_sender: Sender<Vec<Player>>
 ) -> thread::JoinHandle<()> {
@@ -68,6 +70,11 @@ pub fn update_players(
         let mut local_idx: u32 = 0;
 
         loop {
+            let config = {
+                let config_read = shared_config.read().unwrap();
+                config_read.clone()
+            };
+
             let mut players = Vec::new();
             
             let view_matrix: [[f32; 4]; 4] =  driver.read_mem(client_addr + offsets::libclient_so::dwViewMatrix);
@@ -76,6 +83,8 @@ pub fn update_players(
             let cross_pawn_idx: usize = driver.read_mem(local_player + schemas::libclient_so::C_CSPlayerPawnBase::m_iIDEntIndex);
             let cross_pawn_entry: usize = driver.read_mem(entity_list + (0x8 * ((cross_pawn_idx & 0x7FFF) >> 9) + 0x10));
             let cross_pawn: usize = driver.read_mem(cross_pawn_entry + (0x78 * (cross_pawn_idx & 0x1FF)));
+
+            let local_team_num: u32 = driver.read_mem(local_player + schemas::libclient_so::C_BaseEntity::m_iTeamNum);
 
             if let Ok(players_cache_channel) = player_cache_receiver.try_recv() {
                 player_cache.clear();
@@ -93,6 +102,12 @@ pub fn update_players(
                     let health: i32 = driver.read_mem(current_pawn + schemas::libclient_so::C_BaseEntity::m_iHealth);
 
                     if health <= 0 {
+                        continue;
+                    }
+
+                    let pawn_team_num: u32 = driver.read_mem(current_pawn + schemas::libclient_so::C_BaseEntity::m_iTeamNum);
+
+                    if config.ignore_team && pawn_team_num == local_team_num {
                         continue;
                     }
 

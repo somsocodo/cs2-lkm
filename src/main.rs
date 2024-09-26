@@ -52,6 +52,7 @@ fn main() {
 
     let update_players_handle = game::update_players(
         driver.clone(), 
+        config.clone(),
         player_cache_receiver, 
         player_sender);
         

@@ -37,10 +37,6 @@ pub fn run_combat(
                 keystate_read.clone()
             };
 
-            if !config.aim_enabled {
-                continue;
-            }
-
             let mut closest_dist: f32 = INT_MAX as f32;
             let window_center = (config.window_size.0 as f32 / 2.0, config.window_size.1  as f32 / 2.0);
             if let Ok(players) = player_receiver.recv() {
@@ -49,7 +45,7 @@ pub fn run_combat(
                         continue;
                     }
 
-                    if keystate.trigger && player.in_cross{
+                    if config.trigger_enabled && keystate.trigger && player.in_cross{
                         click();
                     }
                 
@@ -65,6 +61,10 @@ pub fn run_combat(
             }
 
             if closest_dist as i32 == INT_MAX {
+                continue;
+            }
+
+            if !config.aim_enabled {
                 continue;
             }
 
