@@ -6,13 +6,19 @@ use crossbeam::channel::Receiver;
 
 use config::{SharedConfig, Config};
 use sdk::Player::Player;
+use sdk::Entity::Entity;
 
 use crate::config::SharedKeyState;
 
-pub fn run_overlay(player_receiver: Receiver<Vec<Player>>, shared_keystate: SharedKeyState, shared_config: SharedConfig) {
+pub fn run_overlay(
+    player_receiver: Receiver<Vec<Player>>, 
+    world_receiver: Receiver<Vec<Entity>>, 
+    shared_keystate: SharedKeyState, 
+    shared_config: SharedConfig) {
     
     egui_overlay::start(Render { 
         player_receiver,
+        world_receiver,
         shared_keystate,
         shared_config,
         config: Config::new()
@@ -21,6 +27,7 @@ pub fn run_overlay(player_receiver: Receiver<Vec<Player>>, shared_keystate: Shar
 
 pub struct Render {
     pub player_receiver: Receiver<Vec<Player>>,
+    pub world_receiver: Receiver<Vec<Entity>>,
     pub shared_keystate: SharedKeyState,
     pub shared_config: SharedConfig,
     pub config: Config
@@ -46,6 +53,20 @@ impl Render {
                         if self.config.esp_nametags {
                             self.draw_nametags(player, ui, painter);
                         }      
+                    }
+                }
+                if let Ok(entities) = self.world_receiver.recv() {
+                    for entity in entities.iter() {
+                        let font_id = egui::FontId::new(13.0, Monospace);
+                        painter.text(
+                            Pos2::new(
+                                entity.pos_2d.x, 
+                                entity.pos_2d.y),
+                            egui::Align2::LEFT_TOP,
+                            entity.class_name.to_str(),
+                            font_id.clone(),
+                            Color32::WHITE,
+                        );
                     }
                 }
             });

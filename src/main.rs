@@ -18,8 +18,9 @@ use driver::Driver;
 mod render;
 mod game;
 
-mod sdk { pub mod CUtl; pub mod Player; pub mod Vector; pub mod WeaponClass; }
+mod sdk { pub mod CUtl; pub mod Player; pub mod Entity; pub mod Vector; pub mod WeaponClass; }
 use sdk::Player::{ PlayerBase, Player};
+use sdk::Entity::{ EntityBase, Entity };
 
 mod config;
 use config::{init_config, init_keystate, SharedKeyState};
@@ -52,9 +53,16 @@ fn main() {
     let (player_cache_sender, player_cache_receiver) = channel::unbounded::<Vec<PlayerBase>>();
     let (player_sender, player_receiver) = channel::unbounded::<Vec<Player>>();
 
+    let (world_cache_sender, world_cache_receiver) = channel::unbounded::<Vec<EntityBase>>();
+    let (world_sender, world_receiver) = channel::unbounded::<Vec<Entity>>();
+
     let cache_players_handle = game::cache_players(
         driver.clone(), 
         player_cache_sender);
+
+    let cache_world_handle = game::cache_world(
+        driver.clone(), 
+        world_cache_sender);
 
     let update_players_handle = game::update_players(
         driver.clone(), 
@@ -62,6 +70,12 @@ fn main() {
         config.clone(),
         player_cache_receiver, 
         player_sender);
+
+    let update_world_handle = game::update_world(
+            driver.clone(),
+            config.clone(),
+            world_cache_receiver, 
+            world_sender);
         
     let combat_handle = combat::run_combat(
             driver.clone(),
@@ -70,10 +84,16 @@ fn main() {
             config.clone(),
             player_receiver.clone());
 
-    render::run_overlay(player_receiver.clone(), keystate.clone(), config.clone());
+    render::run_overlay(
+        player_receiver.clone(), 
+        world_receiver.clone(),
+        keystate.clone(), 
+        config.clone());
 
     cache_players_handle.join().unwrap();
+    cache_world_handle.join().unwrap();
     update_players_handle.join().unwrap();
+    update_world_handle.join().unwrap();
     combat_handle.join().unwrap();
 
 }

@@ -8,6 +8,7 @@ use driver::Driver;
 use crate::config::SharedConfig;
 use sdk::CUtl::CUtlString;
 use sdk::Player::{ PlayerBase, SharedPlayerBase, Player};
+use sdk::Entity::{ EntityBase, SharedEntityBase, Entity };
 use sdk::Vector::Vector3;
 
 use cs2_dumper::offsets::cs2_dumper::offsets;
@@ -177,6 +178,118 @@ pub fn update_players(
             player_sender.send(players).unwrap();
             
             thread::sleep(Duration::from_millis(3));
+        }
+    })
+}
+
+pub fn cache_world(
+    driver: Driver, 
+    world_cache_sender: Sender<Vec<EntityBase>> 
+) -> thread::JoinHandle<()> {
+    thread::spawn(move || {
+        let client_addr =  driver.read_module("libclient.so");
+        
+        loop {
+            let mut world_cache = Vec::new();
+
+            let entity_list: usize = driver.read_mem(client_addr + offsets::libclient_so::dwEntityList);
+            let max_ent_idx: i32 = driver.read_mem(entity_list + offsets::libclient_so::dwGameEntitySystem_highestEntityIndex);
+
+            for i in 65..max_ent_idx as usize { 
+                let world_entry: usize = driver.read_mem(entity_list + (0x8 * ((i & 0x7FFF) >> 9) + 0x10));
+                let base_entity_addr: usize = driver.read_mem(world_entry + 0x78 * (i & 0x1FF));
+
+                if base_entity_addr == 0 {
+                    continue;
+                }
+
+                let entity_identity: usize = driver.read_mem(base_entity_addr + 0x10);
+
+                if entity_identity == 0 {
+                    continue;
+                }
+
+                let class_name_addr: usize = driver.read_mem(entity_identity + 0x20);
+                let class_name: CUtlString = driver.read_mem(class_name_addr);
+                
+                let class_name_str = class_name.to_str();
+                let len = class_name_str.len();
+
+                if len < 9 { // cannot contain weapon || projectile
+                    continue;
+                }
+
+                let bytes = class_name_str.as_bytes();
+
+                let starts_with_weapon = &bytes[0..7] == b"weapon_";
+                let ends_with_projectile = len >= 11 && &bytes[len-11..] == b"_projectile";
+            
+                if !starts_with_weapon && !ends_with_projectile {
+                    continue;
+                }
+
+                let entity_base = EntityBase::new(base_entity_addr, class_name);
+                if i < world_cache.len() {
+                    world_cache[i] = entity_base; 
+                } else {
+                    world_cache.push(entity_base); 
+                }
+                thread::sleep(Duration::from_millis(1));
+            }
+
+            world_cache_sender.send(world_cache).unwrap();
+
+            thread::sleep(Duration::from_millis(200));
+        }  
+    })
+}
+
+pub fn update_world(
+    driver: Driver, 
+    shared_config: SharedConfig,
+    world_cache_receiver: Receiver<Vec<EntityBase>>,
+    world_sender: Sender<Vec<Entity>>
+) -> thread::JoinHandle<()> {
+    thread::spawn(move || {
+        let client_addr =  driver.read_module("libclient.so");
+        let mut world_cache = Vec::new();
+
+        loop {
+            let config = {
+                let config_read = shared_config.read().unwrap();
+                config_read.clone()
+            };
+
+            let mut world_list = Vec::new();
+            
+            let view_matrix: [[f32; 4]; 4] =  driver.read_mem(client_addr + offsets::libclient_so::dwViewMatrix);
+
+            if let Ok(world_cache_channel) = world_cache_receiver.try_recv() {
+                world_cache.clear();
+                world_cache.extend(world_cache_channel.iter().cloned());
+            }
+
+            for (i, entity_base) in world_cache.iter().enumerate()  {
+
+                let game_scene_node: usize = driver.read_mem(entity_base.addr + schemas::libclient_so::C_BaseEntity::m_pGameSceneNode);
+                let origin: Vector3 = driver.read_mem(game_scene_node + schemas::libclient_so::CGameSceneNode::m_vecAbsOrigin);
+                let origin_2d = origin.world_to_screen(view_matrix);
+
+                if origin_2d.x < 0.0 && origin_2d.y < 0.0 {
+                    continue;
+                }
+
+                let mut entity = Entity::new(entity_base.addr, entity_base.class_name, origin, origin_2d);
+
+                if i < world_list.len() {
+                    world_list[i] = entity; 
+                } else {
+                    world_list.push(entity); 
+                }
+            }
+
+            world_sender.send(world_list).unwrap();
+            thread::sleep(Duration::from_millis(10));
         }
     })
 }
