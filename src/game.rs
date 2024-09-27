@@ -228,6 +228,13 @@ pub fn cache_world(
                     continue;
                 }
 
+                if starts_with_weapon {
+                    let owner: i32 = driver.read_mem(base_entity_addr + schemas::libclient_so::C_BaseEntity::m_hOwnerEntity);
+                    if owner != -1 {
+                        continue;
+                    }
+                }
+
                 let mut is_projectile = false;
 
                 if ends_with_projectile {
