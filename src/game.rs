@@ -228,7 +228,13 @@ pub fn cache_world(
                     continue;
                 }
 
-                let mut entity_base = EntityBase::new(base_entity_addr, class_name);
+                let mut is_projectile = false;
+
+                if ends_with_projectile {
+                    is_projectile = true;
+                }
+
+                let mut entity_base = EntityBase::new(base_entity_addr, class_name, is_projectile);
 
                 if starts_with_weapon {
                     entity_base.ammo[0] = driver.read_mem(base_entity_addr + schemas::libclient_so::C_BasePlayerWeapon::m_iClip1);
@@ -291,7 +297,7 @@ pub fn update_world(
                     continue;
                 }
 
-                let entity = Entity::new(entity_base.addr, entity_base.class_name, origin, origin_2d, entity_base.ammo);
+                let entity = Entity::new(entity_base.addr, entity_base.class_name, entity_base.is_projectile, origin, origin_2d, entity_base.ammo);
 
                 if i < world_list.len() {
                     world_list[i] = entity; 

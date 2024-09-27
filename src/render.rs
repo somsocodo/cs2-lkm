@@ -77,6 +77,7 @@ impl Render {
         pos: Pos2,
         align: egui::Align2,
         text: &str,
+        colour: Color32,
         font_id: &egui::FontId
     ) {
         painter.text(
@@ -93,7 +94,7 @@ impl Render {
             align,
             text,
             font_id.clone(),
-            Color32::WHITE
+            colour
         );
     }
 
@@ -105,10 +106,14 @@ impl Render {
             let pos = Pos2::new(
                 entity.pos_2d.x, 
                 entity.pos_2d.y);
-            Render::text_shadow(painter, pos, egui::Align2::CENTER_BOTTOM, icon, &font_id_icon);
-            if entity.ammo[0] != -1{
-                let ammo_str = format!("{}/{}", entity.ammo[0], entity.ammo[1]);
-                Render::text_shadow(painter, pos, egui::Align2::CENTER_TOP, &ammo_str, &font_id_text);
+            if entity.is_projectile {
+                Render::text_shadow(painter, pos, egui::Align2::CENTER_BOTTOM, icon, egui::Color32::from_rgba_premultiplied(255, 100, 0, 255), &font_id_icon);
+            } else {
+                Render::text_shadow(painter, pos, egui::Align2::CENTER_BOTTOM, icon, Color32::WHITE,&font_id_icon);
+                if entity.ammo[0] != -1{
+                    let ammo_str = format!("{}/{}", entity.ammo[0], entity.ammo[1]);
+                    Render::text_shadow(painter, pos, egui::Align2::CENTER_TOP, &ammo_str, Color32::WHITE, &font_id_text);
+                }
             }
         } else {
             painter.text(
