@@ -1,12 +1,15 @@
 use egui_overlay::EguiOverlay;
 use egui_render_three_d::ThreeDBackend as DefaultGfxBackend;
 use egui_overlay::egui_window_glfw_passthrough;
-use egui::{Context, Color32, Pos2, Order, Sense, Vec2, FontFamily::Monospace};
+use egui::{Context, Color32, Pos2, Order, Sense, Vec2, FontDefinitions, FontFamily, FontData};
 use crossbeam::channel::Receiver;
+use std::sync::Once;
+use once_cell::sync::Lazy;
 
 use config::{SharedConfig, Config};
 use sdk::Player::Player;
 use sdk::Entity::Entity;
+use sdk::Icon::IconResolver;
 
 use crate::config::SharedKeyState;
 
@@ -33,7 +36,11 @@ pub struct Render {
     pub config: Config
 }
 
+static ICON_RESOLVER: Lazy<IconResolver> = Lazy::new(|| IconResolver::new());
+
+
 impl Render {    
+
     fn esp_overlay(&self, egui_context: &Context) {
         egui::Area::new("overlay")
             .interactable(false)
@@ -57,19 +64,48 @@ impl Render {
                 }
                 if let Ok(entities) = self.world_receiver.recv() {
                     for entity in entities.iter() {
-                        let font_id = egui::FontId::new(13.0, Monospace);
-                        painter.text(
-                            Pos2::new(
-                                entity.pos_2d.x, 
-                                entity.pos_2d.y),
-                            egui::Align2::LEFT_TOP,
-                            entity.class_name.to_str(),
-                            font_id.clone(),
-                            Color32::WHITE,
-                        );
+                        if self.config.esp_world {
+                            self.draw_entity(entity, painter);
+                        }
                     }
                 }
             });
+    }
+
+    fn draw_entity(&self, entity: &Entity, painter: &egui::Painter){
+        if let Some(icon) = ICON_RESOLVER.resolve_icon(entity.class_name.to_str()) {
+            let font_id = egui::FontId::new(20.0, FontFamily::Proportional);
+            painter.text(
+                Pos2::new(
+                    entity.pos_2d.x+1.5, 
+                    entity.pos_2d.y+1.5),
+                egui::Align2::CENTER_TOP,
+                icon,
+                font_id.clone(),
+                Color32::BLACK,
+            );
+            painter.text(
+                Pos2::new(
+                    entity.pos_2d.x, 
+                    entity.pos_2d.y),
+                egui::Align2::CENTER_TOP,
+                icon,
+                font_id.clone(),
+                Color32::from_rgba_unmultiplied(255, 255, 255, 200),
+            );
+        } else {
+            let font_id = egui::FontId::new(10.0, FontFamily::Monospace);
+            painter.text(
+                Pos2::new(
+                    entity.pos_2d.x, 
+                    entity.pos_2d.y),
+                egui::Align2::CENTER_TOP,
+                entity.class_name.to_str(),
+                font_id.clone(),
+                Color32::WHITE,
+            );
+        }
+
     }
 
     fn draw_hitboxes(&self, player: &Player, ui: &egui::Ui, painter: &egui::Painter) {
@@ -181,7 +217,7 @@ impl Render {
         }
 
         let name = format_name(&player.name.to_str());
-        let font_id = egui::FontId::new(13.0, Monospace);
+        let font_id = egui::FontId::new(13.0, FontFamily::Monospace);
         let name_layout = ui.fonts(|fonts| fonts.layout_no_wrap(name.clone(), font_id.clone(), Color32::WHITE));
         let name_size = name_layout.size();
 
@@ -200,7 +236,7 @@ impl Render {
 
         painter.rect_filled(
             egui::Rect::from_min_size(box_pos, egui::Vec2::new(box_width, box_height)),
-            1.0, // Rounding for the corners
+            1.0,
             Color32::from_rgba_unmultiplied(70, 70, 70, 150)
         );
 
@@ -231,7 +267,24 @@ impl Render {
     }
 }
 
+fn setup(ctx: &Context){
+    let mut fonts = FontDefinitions::default();
 
+    fonts.font_data.insert(
+        "icons".to_owned(),
+        FontData::from_static(include_bytes!("./assets/undefeated.ttf"))
+    );
+
+    fonts
+        .families
+        .entry(FontFamily::Proportional)
+        .or_default()
+        .insert(0, "icons".to_owned());
+
+    ctx.set_fonts(fonts);
+}
+
+static ONCE: Once = Once::new();
 
 impl EguiOverlay for Render {
     fn gui_run(
@@ -240,6 +293,10 @@ impl EguiOverlay for Render {
         _default_gfx_backend: &mut DefaultGfxBackend,
         glfw_backend: &mut egui_window_glfw_passthrough::GlfwBackend,
     ) {
+        ONCE.call_once(|| {
+            setup(egui_context);
+        });
+
         let keystate = self.shared_keystate.read().unwrap();
         
         glfw_backend.window.set_pos(0, 35); //35 for cs2 windowed
@@ -264,6 +321,7 @@ impl EguiOverlay for Render {
                     ui.checkbox(&mut edit_config.esp_nametags, "esp_nametags");
                     ui.checkbox(&mut edit_config.esp_hitboxes, "esp_hitboxes");
                     ui.checkbox(&mut edit_config.esp_bones, "esp_bones");
+                    ui.checkbox(&mut edit_config.esp_world, "esp_world");
                 });
             }
             if edit_config.gui_combat{

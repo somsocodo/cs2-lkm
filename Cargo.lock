@@ -312,6 +312,7 @@ dependencies = [
  "egui_window_glfw_passthrough",
  "libc",
  "nix",
+ "once_cell",
  "rdev",
 ]
 

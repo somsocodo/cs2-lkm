@@ -261,6 +261,12 @@ pub fn update_world(
             };
 
             let mut world_list = Vec::new();
+
+            if !config.esp_world {
+                world_sender.send(world_list).unwrap();
+                thread::sleep(Duration::from_millis(10));
+                continue;
+            }
             
             let view_matrix: [[f32; 4]; 4] =  driver.read_mem(client_addr + offsets::libclient_so::dwViewMatrix);
 

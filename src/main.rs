@@ -5,6 +5,7 @@ extern crate nix;
 extern crate egui;
 extern crate egui_overlay;
 extern crate egui_render_three_d;
+extern crate once_cell;
 extern crate rdev;
 use rdev::{listen, Event, EventType, Key, Button};
 
@@ -18,7 +19,7 @@ use driver::Driver;
 mod render;
 mod game;
 
-mod sdk { pub mod CUtl; pub mod Player; pub mod Entity; pub mod Vector; pub mod WeaponClass; }
+mod sdk { pub mod CUtl; pub mod Icon; pub mod Player; pub mod Entity; pub mod Vector; pub mod WeaponClass; }
 use sdk::Player::{ PlayerBase, Player};
 use sdk::Entity::{ EntityBase, Entity };
 
