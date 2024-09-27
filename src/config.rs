@@ -10,6 +10,7 @@ pub struct Config {
     pub esp_hitboxes: bool,
     pub esp_bones: bool,
     pub aim_enabled: bool,
+    pub aim_fov: f32,
     pub aim_smoothing: f32,
     pub trigger_enabled: bool,
     pub ignore_team: bool
@@ -26,6 +27,7 @@ impl Config {
             esp_hitboxes: true,
             esp_bones: true,
             aim_enabled: true,
+            aim_fov: 10.0,
             aim_smoothing: 3.5,
             trigger_enabled: true,
             ignore_team: true

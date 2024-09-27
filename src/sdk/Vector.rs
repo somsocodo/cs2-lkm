@@ -223,3 +223,24 @@ pub fn vec_translate(origin: &Vector3, angles: &Vector2, dist: f32) -> Vector3 {
         z: origin.z + forward.z * dist,
     }
 }
+
+pub fn get_fov(scrangles: Vector2, aimangles: Vector3) -> f32 {
+    let mut delta = Vector2 {
+        x: aimangles.x - scrangles.x,
+        y: aimangles.y - scrangles.y,
+    };
+
+    if delta.x > 180.0 {
+        delta.x = 360.0 - delta.x;
+    }
+    if delta.x < 0.0 {
+        delta.x = -delta.x;
+    }
+
+    delta.y = (delta.y + 180.0) % 360.0 - 180.0;
+    if delta.y < 0.0 {
+        delta.y = -delta.y;
+    }
+
+    (delta.x.powi(2) + delta.y.powi(2)).sqrt()
+}

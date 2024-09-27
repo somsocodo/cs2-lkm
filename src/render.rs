@@ -250,6 +250,10 @@ impl EguiOverlay for Render {
                 .resizable(true)
                 .show(egui_context, |ui| {
                     ui.checkbox(&mut edit_config.aim_enabled, "aim_enabled");
+                    ui.label("aim_fov");
+                    ui.add(egui::Slider::new(&mut edit_config.aim_fov, 0.0..=360.0));
+                    ui.label("aim_smoothing");
+                    ui.add(egui::Slider::new(&mut edit_config.aim_smoothing, 0.0..=10.0));
                     ui.checkbox(&mut edit_config.trigger_enabled, "trigger_enabled");
                 });
             }

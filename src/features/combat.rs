@@ -7,7 +7,7 @@ use libc::INT_MAX;
 use sdk::WeaponClass::{get_weapon_class, WeaponClass};
 use sdk::CUtl::CUtlVector;
 use sdk::Player::Player;
-use sdk::Vector::{ Vector2, Vector3};
+use sdk::Vector::{ Vector2, Vector3, get_fov };
 
 use crate::{config::{ SharedConfig, SharedKeyState }, sdk::Player::SharedPlayerBase};
 
@@ -87,11 +87,11 @@ pub fn run_combat(
                 }
             }
 
-            if closest_dist as i32 == INT_MAX {
+            if !config.aim_enabled {
                 continue;
             }
 
-            if !config.aim_enabled {
+            if closest_dist as i32 == INT_MAX {
                 continue;
             }
 
@@ -103,6 +103,11 @@ pub fn run_combat(
             let mut angles: Vector3 = Vector3 { x: 0.0, y: 0.0, z: 0.0 };
             let view_angle: Vector2 = driver.read_mem(local_player.pawn + schemas::libclient_so::C_BasePlayerPawn::v_angle);
             let aimbot_angle = get_target_angle(&driver, target_pos, punch_angle, shots_fired, weapon_class, local_player.pawn);
+            let aimbot_fov = get_fov(view_angle, aimbot_angle);
+
+            if aimbot_fov > config.aim_fov {
+                continue;
+            }
             
             angles.x = view_angle.x - aimbot_angle.x;
             angles.y = view_angle.y - aimbot_angle.y;
