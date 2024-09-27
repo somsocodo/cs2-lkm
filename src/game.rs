@@ -8,7 +8,7 @@ use driver::Driver;
 use crate::config::SharedConfig;
 use sdk::CUtl::CUtlString;
 use sdk::Player::{ PlayerBase, SharedPlayerBase, Player};
-use sdk::Entity::{ EntityBase, SharedEntityBase, Entity };
+use sdk::Entity::{ EntityBase, Entity };
 use sdk::Vector::Vector3;
 
 use cs2_dumper::offsets::cs2_dumper::offsets;
@@ -228,7 +228,13 @@ pub fn cache_world(
                     continue;
                 }
 
-                let entity_base = EntityBase::new(base_entity_addr, class_name);
+                let mut entity_base = EntityBase::new(base_entity_addr, class_name);
+
+                if starts_with_weapon {
+                    entity_base.ammo[0] = driver.read_mem(base_entity_addr + schemas::libclient_so::C_BasePlayerWeapon::m_iClip1);
+                    entity_base.ammo[1] = driver.read_mem(base_entity_addr + schemas::libclient_so::C_BasePlayerWeapon::m_iClip1);
+                }
+
                 if i < world_cache.len() {
                     world_cache[i] = entity_base; 
                 } else {
@@ -285,7 +291,7 @@ pub fn update_world(
                     continue;
                 }
 
-                let mut entity = Entity::new(entity_base.addr, entity_base.class_name, origin, origin_2d);
+                let entity = Entity::new(entity_base.addr, entity_base.class_name, origin, origin_2d, entity_base.ammo);
 
                 if i < world_list.len() {
                     world_list[i] = entity; 

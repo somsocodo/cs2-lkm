@@ -72,36 +72,52 @@ impl Render {
             });
     }
 
+    fn text_shadow(
+        painter: &egui::Painter,
+        pos: Pos2,
+        align: egui::Align2,
+        text: &str,
+        font_id: &egui::FontId
+    ) {
+        painter.text(
+            Pos2::new(
+                pos.x + 1.5, 
+                pos.y + 1.5),
+                align,
+                text,
+                font_id.clone(),
+            Color32::BLACK
+        );
+        painter.text(
+            pos,
+            align,
+            text,
+            font_id.clone(),
+            Color32::WHITE
+        );
+    }
+
     fn draw_entity(&self, entity: &Entity, painter: &egui::Painter){
+        let font_id_text = egui::FontId::new(10.0, FontFamily::Monospace);
+        let font_id_icon = egui::FontId::new(20.0, FontFamily::Proportional);
+
         if let Some(icon) = ICON_RESOLVER.resolve_icon(entity.class_name.to_str()) {
-            let font_id = egui::FontId::new(20.0, FontFamily::Proportional);
-            painter.text(
-                Pos2::new(
-                    entity.pos_2d.x+1.5, 
-                    entity.pos_2d.y+1.5),
-                egui::Align2::CENTER_TOP,
-                icon,
-                font_id.clone(),
-                Color32::BLACK,
-            );
-            painter.text(
-                Pos2::new(
-                    entity.pos_2d.x, 
-                    entity.pos_2d.y),
-                egui::Align2::CENTER_TOP,
-                icon,
-                font_id.clone(),
-                Color32::from_rgba_unmultiplied(255, 255, 255, 200),
-            );
+            let pos = Pos2::new(
+                entity.pos_2d.x, 
+                entity.pos_2d.y);
+            Render::text_shadow(painter, pos, egui::Align2::CENTER_BOTTOM, icon, &font_id_icon);
+            if entity.ammo[0] != -1{
+                let ammo_str = format!("{}/{}", entity.ammo[0], entity.ammo[1]);
+                Render::text_shadow(painter, pos, egui::Align2::CENTER_TOP, &ammo_str, &font_id_text);
+            }
         } else {
-            let font_id = egui::FontId::new(10.0, FontFamily::Monospace);
             painter.text(
                 Pos2::new(
                     entity.pos_2d.x, 
                     entity.pos_2d.y),
                 egui::Align2::CENTER_TOP,
                 entity.class_name.to_str(),
-                font_id.clone(),
+                font_id_text.clone(),
                 Color32::WHITE,
             );
         }
