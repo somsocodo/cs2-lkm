@@ -118,8 +118,10 @@ pub fn run_combat(
 
             let ms = if config.aim_smoothing >= 1.0 {
                 if x.abs() > 1.0 {
-                    if smooth_x < x || smooth_x > x {
+                    if smooth_x < x {
                         smooth_x += 1.0 + (x / config.aim_smoothing);
+                    } else if smooth_x > x {
+                        smooth_x += (x / config.aim_smoothing) - 1.0;
                     } else {
                         smooth_x = x;
                     }
@@ -128,8 +130,10 @@ pub fn run_combat(
                 }
 
                 if y.abs() > 1.0 {
-                    if smooth_y < y || smooth_y > y {
+                    if smooth_y < y {
                         smooth_y += 1.0 + (y / config.aim_smoothing);
+                    } else if smooth_y > y {
+                        smooth_y += (y / config.aim_smoothing) - 1.0;
                     } else {
                         smooth_y = y;
                     }
