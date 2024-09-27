@@ -1,4 +1,5 @@
 use std::ops::{Add, Sub, Mul, MulAssign};
+use std::f32::consts::PI;
 
 #[derive(Copy, Clone)]
 pub struct Vector4 {
@@ -58,6 +59,68 @@ impl Vector3 {
             Vector2 { x: -99.0, y: -99.0 }
         }
     }
+
+    pub fn normalize(&self) -> Vector3 {
+        let magnitude = (self.x * self.x + self.y * self.y + self.z * self.z).sqrt();
+        if magnitude > 0.0 {
+            Vector3 {
+                x: self.x / magnitude,
+                y: self.y / magnitude,
+                z: self.z / magnitude,
+            }
+        } else {
+            *self
+        }
+    }
+
+    pub fn vec_angles(forward: Vector3, angles: &mut Vector3) {
+        let tmp: f32;
+        let mut yaw: f32;
+        let mut pitch: f32;
+
+        if forward.y == 0.0 && forward.x == 0.0 {
+            yaw = 0.0;
+            if forward.z > 0.0 {
+                pitch = 270.0;
+            } else {
+                pitch = 90.0;
+            }
+        } else {
+            yaw = (forward.y.atan2(forward.x) * 180.0 / PI) as f32;
+            if yaw < 0.0 {
+                yaw += 360.0;
+            }
+            tmp = (forward.x * forward.x + forward.y * forward.y).sqrt();
+            pitch = (-forward.z).atan2(tmp) * 180.0 / PI;
+            if pitch < 0.0 {
+                pitch += 360.0;
+            }
+        }
+
+        angles.x = pitch;
+        angles.y = yaw;
+        angles.z = 0.0;
+    }
+
+    pub fn clamp(&mut self) {
+        if self.x > 89.0 && self.x <= 180.0 {
+            self.x = 89.0;
+        }
+        if self.x > 180.0 {
+            self.x = self.x - 360.0;
+        }
+        if self.x < -89.0 {
+            self.x = -89.0;
+        }
+
+        self.y = ((self.y + 180.0) % 360.0) - 180.0;
+        self.z = 0.0;
+    }
+
+    pub fn is_zero(&self) -> bool {
+        self.x == 0.0 && self.y == 0.0 && self.z == 0.0
+    }
+
 }
 
 impl Add for Vector3 {

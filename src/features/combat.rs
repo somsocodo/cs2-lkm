@@ -2,15 +2,16 @@ use std::thread;
 use std::time::Duration;
 use crossbeam::channel::Receiver;
 use rdev::{simulate, Button, EventType, SimulateError};
-
 use driver::Driver;
 use libc::INT_MAX;
+use sdk::WeaponClass::{get_weapon_class, WeaponClass};
 use sdk::CUtl::CUtlVector;
 use sdk::Player::Player;
-use sdk::Vector::Vector2;
+use sdk::Vector::{ Vector2, Vector3};
 
 use crate::{config::{ SharedConfig, SharedKeyState }, sdk::Player::SharedPlayerBase};
 
+use cs2_dumper::offsets::cs2_dumper::offsets;
 use cs2_dumper::libclient_so::cs2_dumper::schemas;
 
 fn click() {
@@ -31,6 +32,11 @@ pub fn run_combat(
 ) -> thread::JoinHandle<()> {
     thread::spawn(move || {
         let mut target: Player = Player::default();
+        let mut aimbot_ms: i64 = 0;
+
+        let client_addr =  driver.read_module("libclient.so");
+        let dwSensitivity: usize = driver.read_mem(client_addr + offsets::libclient_so::dwSensitivity);
+        let sensitivity_raw: f32 = driver.read_mem(dwSensitivity + offsets::libclient_so::dwSensitivity_sensitivity);
 
         loop {
             let config = {
@@ -48,10 +54,17 @@ pub fn run_combat(
                 local_player_read.clone()
             };
 
+            let weapon_class = get_weapon_class(&driver, local_player.pawn);
+
             let mut closest_dist: f32 = INT_MAX as f32;
             let window_center = (config.window_size.0 as f32 / 2.0, config.window_size.1  as f32 / 2.0);
 
             let punch_angle: Vector2 = get_vec_punch(&driver, local_player.pawn);
+
+            let fov_multipler: f32 = driver.read_mem(local_player.pawn + schemas::libclient_so::C_BasePlayerPawn::m_flFOVSensitivityAdjust);
+            let sensitivity = sensitivity_raw * fov_multipler;
+
+            let shots_fired: u32 = driver.read_mem(local_player.pawn + schemas::libclient_so::C_CSPlayerPawn::m_iShotsFired);
 
             if let Ok(players) = player_receiver.recv() {
                 for player in players.iter() {
@@ -82,7 +95,63 @@ pub fn run_combat(
                 continue;
             }
 
-            //println!("target: {} {} | {}", target.name.to_str(), target.in_cross, closest_dist);
+            let target_pos = target.bones_3d[0].pos;
+            if target_pos.is_zero() {
+                continue;
+            }
+
+            let mut angles: Vector3 = Vector3 { x: 0.0, y: 0.0, z: 0.0 };
+            let view_angle: Vector2 = driver.read_mem(local_player.pawn + schemas::libclient_so::C_BasePlayerPawn::v_angle);
+            let aimbot_angle = get_target_angle(&driver, target_pos, punch_angle, shots_fired, weapon_class, local_player.pawn);
+            
+            angles.x = view_angle.x - aimbot_angle.x;
+            angles.y = view_angle.y - aimbot_angle.y;
+            angles.z = 0.0;
+
+            angles.clamp();
+
+            let x = (angles.y / sensitivity) / 0.022;
+            let y = (angles.x / sensitivity) / -0.022;
+
+            let mut smooth_x = 0.0f32;
+            let mut smooth_y = 0.0f32;    
+
+            let ms = if config.aim_smoothing >= 1.0 {
+                if x.abs() > 1.0 {
+                    if smooth_x < x || smooth_x > x {
+                        smooth_x += 1.0 + (x / config.aim_smoothing);
+                    } else {
+                        smooth_x = x;
+                    }
+                } else {
+                    smooth_x = x;
+                }
+
+                if y.abs() > 1.0 {
+                    if smooth_y < y || smooth_y > y {
+                        smooth_y += 1.0 + (y / config.aim_smoothing);
+                    } else {
+                        smooth_y = y;
+                    }
+                } else {
+                    smooth_y = y;
+                }
+                ((config.aim_smoothing / 100.0) + 1.0) as i64 * 16
+            } else {
+                smooth_x = x;
+                smooth_y = y;
+                16
+            };
+
+            let now = std::time::SystemTime::now();
+            let duration = now.duration_since(std::time::UNIX_EPOCH).expect("Time went backwards");
+            let current_ms = duration.as_millis() as i64;
+
+            if !keystate.show_gui && keystate.aim && current_ms - aimbot_ms > ms {
+                aimbot_ms = current_ms;
+                driver.send_input(0x02, 0, smooth_x as i32).unwrap();
+                driver.send_input(0x02, 1, smooth_y as i32).unwrap();
+            }
 
             thread::sleep(Duration::from_millis(1));
         }
@@ -91,7 +160,7 @@ pub fn run_combat(
 }
 
 
-pub fn get_vec_punch(driver: &Driver, local_player: usize) -> Vector2 {
+fn get_vec_punch(driver: &Driver, local_player: usize) -> Vector2 {
     let mut data = Vector2 { x: 0.0, y: 0.0 };
     let mut aim_punch_cache: [u64; 2] = [0, 0];
     
@@ -119,4 +188,44 @@ pub fn get_vec_punch(driver: &Driver, local_player: usize) -> Vector2 {
     }
 
     data
+}
+
+fn get_target_angle(
+    driver: &Driver, 
+    target: Vector3, 
+    punch_angle: Vector2, 
+    shots_fired: u32, 
+    weapon_class: WeaponClass,
+    local_player: usize
+) -> Vector3 {
+    let feet_pos: Vector3 = driver.read_mem(local_player + schemas::libclient_so::C_BasePlayerPawn::m_vOldOrigin);
+
+    let eye_pos_offset: Vector3 = driver.read_mem(local_player + schemas::libclient_so::C_BaseModelEntity::m_vecViewOffset);
+    let eye_pos = feet_pos + eye_pos_offset;
+
+    let mut angle = Vector3 {
+        x: target.x - eye_pos.x,
+        y: target.y - eye_pos.y,
+        z: target.z - eye_pos.z,
+    };
+
+    angle = angle.normalize();
+
+    Vector3::vec_angles(angle, &mut angle);
+
+    if shots_fired > 0 {
+        match weapon_class {
+            WeaponClass::Sniper | WeaponClass::Shotgun => {
+            },
+            WeaponClass::Pistol if shots_fired < 2 => {
+            },
+            _ => {
+                angle.x -= punch_angle.x * 2.0;
+                angle.y -= punch_angle.y * 2.0;
+            }
+        }
+    }
+    angle.clamp();
+
+    angle
 }

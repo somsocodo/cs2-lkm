@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Config {
     pub window_size: (i32, i32),
     pub gui_visuals: bool,
@@ -10,6 +10,7 @@ pub struct Config {
     pub esp_hitboxes: bool,
     pub esp_bones: bool,
     pub aim_enabled: bool,
+    pub aim_smoothing: f32,
     pub trigger_enabled: bool,
     pub ignore_team: bool
 }
@@ -25,6 +26,7 @@ impl Config {
             esp_hitboxes: true,
             esp_bones: true,
             aim_enabled: true,
+            aim_smoothing: 3.5,
             trigger_enabled: true,
             ignore_team: true
         }
@@ -40,7 +42,8 @@ pub fn init_config() -> SharedConfig {
 #[derive(Clone)]
 pub struct KeyState {
     pub show_gui: bool,
-    pub trigger: bool
+    pub trigger: bool,
+    pub aim: bool
 }
 
 impl KeyState {
@@ -48,6 +51,7 @@ impl KeyState {
         Self {
             show_gui: false,
             trigger: false,
+            aim: false
         }
     }
 }

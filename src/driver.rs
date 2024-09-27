@@ -2,9 +2,13 @@
 use nix::ioctl_readwrite;
 use nix::fcntl::{open, OFlag};
 use libc::{c_char, pid_t, size_t, uintptr_t};
+use libc::{gettimeofday, input_event, timeval};
+use std::os::unix::io::BorrowedFd;
+use nix::unistd::write;
 use nix::sys::stat::Mode;
+use std::fs::read_dir;
 use std::path::Path;
-use std::mem;
+use std::{ mem, slice };
 use std::io::Error;
 
 #[repr(C)]
@@ -32,7 +36,8 @@ struct read_mem_s {
 
 #[derive(Copy, Clone)]
 pub struct Driver {
-    fd: i32
+    fd: i32,
+    input_fd: i32
 }
 
 ioctl_readwrite!(ioctl_task,  0x22, b'0', &set_task_s);
@@ -42,7 +47,8 @@ ioctl_readwrite!(ioctl_mem,  0x22, b'2', &read_mem_s);
 impl Driver {
     pub fn new() -> Driver { 
         Driver {
-            fd: -1
+            fd: -1,
+            input_fd: -1
         }
     }
 
@@ -64,6 +70,78 @@ impl Driver {
         self.fd = open(path, OFlag::O_RDWR, Mode::empty())?;
         
         Ok(self.fd)
+    }
+
+    pub fn open_input_device (&mut self, device: &str) -> Result<i32, Error>{
+        let mut dev_dir: String = "/dev/input/by-id/".to_owned();
+        let input_dir = "/dev/input/by-id/";
+        
+        for entry in read_dir(input_dir)? {
+            let entry = entry?;
+            let file_type = entry.file_type()?;
+            
+            if file_type.is_symlink() {
+                let file_name = entry.file_name();
+                let file_name_str = file_name.to_str().unwrap_or_default();
+                
+                if file_name_str.ends_with(device) {
+                    dev_dir.push_str(file_name_str);
+                    println!("found input device: {}", file_name_str);
+                    let path = Path::new(&dev_dir);
+                    self.input_fd = open(path, OFlag::O_RDWR, Mode::empty())?;
+                    
+                    return Ok(self.input_fd);
+                }
+            }
+        }
+        
+        Err(Error::new(std::io::ErrorKind::NotFound, "Device not found"))
+    }
+
+    pub fn send_input(&self, event_type: u16, code: u16, value: i32) -> Result<isize, Error> {
+        let mut start = input_event {
+            time: timeval {
+                tv_sec: 0,
+                tv_usec: 0,
+            },
+            type_: event_type,
+            code,
+            value,
+        };
+    
+        let mut end = input_event {
+            time: timeval {
+                tv_sec: 0,
+                tv_usec: 0,
+            },
+            type_: 0x00,    //EV_SYN
+            code: 0x00,     //SYN_REPORT
+            value: 0,
+        };
+    
+        unsafe {
+            gettimeofday(&mut start.time, std::ptr::null_mut());
+            gettimeofday(&mut end.time, std::ptr::null_mut());
+        }
+
+        let borrowed_fd = unsafe { BorrowedFd::borrow_raw(self.input_fd) };
+
+        let start_bytes = unsafe {
+            slice::from_raw_parts(&start as *const input_event as *const u8, mem::size_of::<input_event>())
+        };
+        
+        let end_bytes = unsafe {
+            slice::from_raw_parts(&end as *const input_event as *const u8, mem::size_of::<input_event>())
+        };
+
+        write(borrowed_fd, start_bytes).unwrap();
+
+        let result_end = write(borrowed_fd, end_bytes);
+    
+        match result_end {
+            Ok(bytes_written) => Ok(bytes_written as isize),
+            Err(e) => Err(e.into())
+        }
     }
 
     pub fn set_task(&self, task: &str) -> pid_t{

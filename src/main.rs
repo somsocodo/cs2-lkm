@@ -18,7 +18,7 @@ use driver::Driver;
 mod render;
 mod game;
 
-mod sdk { pub mod CUtl; pub mod Player; pub mod Vector;  }
+mod sdk { pub mod CUtl; pub mod Player; pub mod Vector; pub mod WeaponClass; }
 use sdk::Player::{ PlayerBase, Player};
 
 mod config;
@@ -33,8 +33,13 @@ fn main() {
     let mut driver = Driver::new();
 
     match driver.open_device("mem-device") {
-        Ok(fd)  => println!("found device, fd: {}", fd),
+        Ok(fd)  => println!("found memory device, fd: {}", fd),
         _e => panic!("unable to find device")
+    };
+
+    match driver.open_input_device("event-mouse") {
+        Ok(fd)  => println!("found mouse device, fd: {}", fd),
+        _e => panic!("unable to find mouse device")
     };
 
     let _pid = driver.set_task("cs2");
@@ -89,11 +94,19 @@ fn key_listener(keystate: SharedKeyState) -> () {
                         let mut keystate = keystate.write().unwrap();
                         keystate.trigger = true;
                     }
+                    if button == Button::Left {
+                        let mut keystate = keystate.write().unwrap();
+                        keystate.aim = true;
+                    }
                 },
                 EventType::ButtonRelease(button) => {
                     if button == Button::Unknown(8) {
                         let mut keystate = keystate.write().unwrap();
                         keystate.trigger = false;
+                    }
+                    if button == Button::Left {
+                        let mut keystate = keystate.write().unwrap();
+                        keystate.aim = false;
                     }
                 },
                 _ => {}
