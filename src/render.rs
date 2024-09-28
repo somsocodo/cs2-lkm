@@ -108,6 +108,19 @@ impl Render {
                 entity.pos_2d.y);
             if entity.is_projectile {
                 Render::text_shadow(painter, pos, egui::Align2::CENTER_BOTTOM, icon, egui::Color32::from_rgba_premultiplied(255, 100, 0, 255), &font_id_icon);
+            } else if entity.is_planted_c4 {
+                Render::text_shadow(painter, pos, egui::Align2::CENTER_BOTTOM, icon, egui::Color32::from_rgba_premultiplied(255, 100, 0, 255), &font_id_icon);
+                if entity.ammo[0] != -1{
+                    let ammo_str = format!("{}/{}", entity.ammo[0], entity.ammo[1]);
+                    let mut colour = Color32::WHITE;
+                    if entity.ammo[0] <= 10 {
+                        colour = egui::Color32::from_rgba_premultiplied(255, 100, 0, 255);
+                    }
+                    if entity.ammo[0] <= 5 {
+                        colour = Color32::RED;
+                    }
+                    Render::text_shadow(painter, pos, egui::Align2::CENTER_TOP, &ammo_str, colour, &font_id_text);
+                }
             } else {
                 Render::text_shadow(painter, pos, egui::Align2::CENTER_BOTTOM, icon, Color32::WHITE,&font_id_icon);
                 if entity.ammo[0] != -1{

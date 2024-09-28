@@ -241,7 +241,7 @@ pub fn cache_world(
                     is_projectile = true;
                 }
 
-                let mut entity_base = EntityBase::new(base_entity_addr, class_name, is_projectile);
+                let mut entity_base = EntityBase::new(base_entity_addr, class_name, is_projectile, false);
 
                 if starts_with_weapon {
                     entity_base.ammo[0] = driver.read_mem(base_entity_addr + schemas::libclient_so::C_BasePlayerWeapon::m_iClip1);
@@ -254,6 +254,15 @@ pub fn cache_world(
                     world_cache.push(entity_base); 
                 }
                 thread::sleep(Duration::from_millis(1));
+            }
+
+            let planted_c4: bool = driver.read_mem(client_addr + offsets::libclient_so::dwPlantedC4 - 0x8);
+            if planted_c4 {
+                let p_planted_c4: usize = driver.read_mem(client_addr + offsets::libclient_so::dwPlantedC4);
+                let c4_base_addr: usize = driver.read_mem(p_planted_c4);
+
+                let c4_entity_base = EntityBase::new(c4_base_addr, CUtlString::new("planted_c4"), false, true);
+                world_cache.push(c4_entity_base);
             }
 
             world_cache_sender.send(world_cache).unwrap();
@@ -295,7 +304,6 @@ pub fn update_world(
             }
 
             for (i, entity_base) in world_cache.iter().enumerate()  {
-
                 let game_scene_node: usize = driver.read_mem(entity_base.addr + schemas::libclient_so::C_BaseEntity::m_pGameSceneNode);
                 let origin: Vector3 = driver.read_mem(game_scene_node + schemas::libclient_so::CGameSceneNode::m_vecAbsOrigin);
                 let origin_2d = origin.world_to_screen(view_matrix);
@@ -304,7 +312,15 @@ pub fn update_world(
                     continue;
                 }
 
-                let entity = Entity::new(entity_base.addr, entity_base.class_name, entity_base.is_projectile, origin, origin_2d, entity_base.ammo);
+                let mut ammo = entity_base.ammo;
+                if entity_base.is_planted_c4 {
+                    let c4_blow: f32 = driver.read_mem(entity_base.addr + schemas::libclient_so::C_PlantedC4::m_flC4Blow);
+                    let c4_next_beep: f32 = driver.read_mem(entity_base.addr + schemas::libclient_so::C_PlantedC4::m_flNextBeep);
+                    let c4_timer_length: f32 = driver.read_mem(entity_base.addr + schemas::libclient_so::C_PlantedC4::m_flTimerLength);
+                    ammo = [(c4_blow - c4_next_beep) as i32, c4_timer_length as i32];
+                }
+
+                let entity = Entity::new(entity_base.addr, entity_base.class_name, entity_base.is_projectile, entity_base.is_planted_c4, origin, origin_2d, ammo);
 
                 if i < world_list.len() {
                     world_list[i] = entity; 

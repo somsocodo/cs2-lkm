@@ -64,6 +64,7 @@ impl IconResolver {
         icons.insert("incgrenade_projectile", "n");
         icons.insert("weapon_incgrenade", "n");
         icons.insert("weapon_c4", "o");
+        icons.insert("planted_c4", "o");
         icons.insert("defuse kit", "r");
 
         IconResolver { icons }
