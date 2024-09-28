@@ -1,7 +1,7 @@
 use egui_overlay::EguiOverlay;
 use egui_render_three_d::ThreeDBackend as DefaultGfxBackend;
 use egui_overlay::egui_window_glfw_passthrough;
-use egui::{Context, Color32, Pos2, Order, Sense, Vec2, FontDefinitions, FontFamily, FontData};
+use egui::{ Context, Color32, Pos2, Order, Sense, Vec2, FontId, FontDefinitions, FontFamily, FontData};
 use crossbeam::channel::Receiver;
 use std::sync::Once;
 use once_cell::sync::Lazy;
@@ -78,7 +78,7 @@ impl Render {
         align: egui::Align2,
         text: &str,
         colour: Color32,
-        font_id: &egui::FontId
+        font_id: &FontId
     ) {
         painter.text(
             Pos2::new(
@@ -99,8 +99,8 @@ impl Render {
     }
 
     fn draw_entity(&self, entity: &Entity, painter: &egui::Painter){
-        let font_id_text = egui::FontId::new(10.0, FontFamily::Monospace);
-        let font_id_icon = egui::FontId::new(20.0, FontFamily::Proportional);
+        let font_id_text = FontId::new(10.0, FontFamily::Monospace);
+        let font_id_icon = FontId::new(20.0, FontFamily::Name("icons".into()));
 
         if let Some(icon) = ICON_RESOLVER.resolve_icon(entity.class_name.to_str()) {
             let pos = Pos2::new(
@@ -303,17 +303,35 @@ impl Render {
 
 fn setup(ctx: &Context){
     let mut fonts = FontDefinitions::default();
+    let icons_font_family = FontFamily::Name("icons".into());
 
     fonts.font_data.insert(
         "icons".to_owned(),
         FontData::from_static(include_bytes!("./assets/undefeated.ttf"))
     );
 
+    fonts.font_data.insert(
+        "text".to_owned(),
+        FontData::from_static(include_bytes!("./assets/dejavu-sans-mono.book.ttf"))
+    );
+
     fonts
         .families
-        .entry(FontFamily::Proportional)
+        .entry(icons_font_family.clone())
         .or_default()
         .insert(0, "icons".to_owned());
+
+    fonts
+        .families
+        .entry(icons_font_family.clone())
+        .or_default()
+        .push("text".to_owned());
+
+    fonts
+        .families
+        .entry(FontFamily::Monospace)
+        .or_default()
+        .insert(0, "text".to_owned());
 
     ctx.set_fonts(fonts);
 }
