@@ -24,7 +24,7 @@ pub fn run_overlay(
         world_receiver,
         shared_keystate,
         shared_config,
-        config: Config::new()
+        config: Config::load(false)
     });
 }
 
@@ -157,18 +157,20 @@ impl Render {
             if (bb_min.x - bb_max.x).abs() > ui.available_rect_before_wrap().width() as f32 {
                 continue;
             }
-    
-            let mut color = self.config.esp_hitboxes_col_hid;
+
+            let mut col = self.config.esp_hitboxes_col_hid;
             if player.bspotted {
-                color = self.config.esp_hitboxes_col_vis; 
+                col = self.config.esp_hitboxes_col_vis; 
             }
+
+            let colour = Color32::from_rgba_premultiplied(col[0], col[1], col[2], col[3]);
             
             let radius_min = hitbox.min_rad_2d;
             let radius_max = hitbox.max_rad_2d;
     
-            painter.circle_filled(bb_max_pos, radius_min, color);
-            painter.circle_filled(bb_min_pos, radius_max, color);
-            painter.line_segment([bb_min_pos, bb_max_pos], (radius_min * 2.0, color));
+            painter.circle_filled(bb_max_pos, radius_min, colour);
+            painter.circle_filled(bb_min_pos, radius_max, colour);
+            painter.line_segment([bb_min_pos, bb_max_pos], (radius_min * 2.0, colour));
         }
     }
 
@@ -374,8 +376,8 @@ impl EguiOverlay for Render {
                     ui.checkbox(&mut edit_config.esp_nametags, "esp_nametags");
                     ui.checkbox(&mut edit_config.esp_hitboxes, "esp_hitboxes");
                     ui.with_layout(egui::Layout::left_to_right(egui::Align::Min), |ui| {
-                        ui.color_edit_button_srgba(&mut edit_config.esp_hitboxes_col_vis);
-                        ui.color_edit_button_srgba(&mut edit_config.esp_hitboxes_col_hid);
+                        colour_edit_button(ui, &mut edit_config.esp_hitboxes_col_vis);
+                        colour_edit_button(ui, &mut edit_config.esp_hitboxes_col_hid);
                     });
                     ui.checkbox(&mut edit_config.esp_bones, "esp_bones");
                     ui.checkbox(&mut edit_config.esp_world, "esp_world");
@@ -400,6 +402,9 @@ impl EguiOverlay for Render {
                 .resizable(true)
                 .show(egui_context, |ui| {
                     ui.checkbox(&mut edit_config.ignore_team, "ignore_team");
+                    if ui.button("save config").clicked() {
+                        edit_config.save();
+                    }
                 });
             }
             if edit_config != self.config {
@@ -414,5 +419,12 @@ impl EguiOverlay for Render {
         self.esp_overlay(egui_context);
 
         egui_context.request_repaint();
+    }
+}
+
+fn colour_edit_button(ui: &mut egui::Ui, colour_array: &mut [u8; 4]) {
+    let mut colour = Color32::from_rgba_premultiplied(colour_array[0], colour_array[1], colour_array[2], colour_array[3]);
+    if ui.color_edit_button_srgba(&mut colour).changed() {
+        *colour_array = [colour.r(), colour.g(), colour.b(), colour.a()];
     }
 }

@@ -7,6 +7,9 @@ extern crate egui_overlay;
 extern crate egui_render_three_d;
 extern crate once_cell;
 extern crate rdev;
+extern crate serde;
+extern crate serde_json;
+
 use rdev::{listen, Event, EventType, Key, Button};
 
 extern crate crossbeam;

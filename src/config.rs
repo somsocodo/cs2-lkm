@@ -1,7 +1,9 @@
 use std::sync::{Arc, RwLock};
-use egui::Color32;
+use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::io::{Read, Write};
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq)]
 pub struct Config {
     pub window_size: (i32, i32),
     pub gui_visuals: bool,
@@ -10,8 +12,8 @@ pub struct Config {
 
     pub esp_nametags: bool,
     pub esp_hitboxes: bool,
-    pub esp_hitboxes_col_vis: Color32,
-    pub esp_hitboxes_col_hid: Color32,
+    pub esp_hitboxes_col_vis: [u8; 4],
+    pub esp_hitboxes_col_hid: [u8; 4],
     pub esp_bones: bool,
     pub esp_world: bool,
 
@@ -33,8 +35,8 @@ impl Config {
 
             esp_nametags: true,
             esp_hitboxes: true,
-            esp_hitboxes_col_vis: Color32::from_rgba_premultiplied(0, 200, 0, 1),
-            esp_hitboxes_col_hid: Color32::from_rgba_premultiplied(200, 0, 0, 1),
+            esp_hitboxes_col_vis: [0, 200, 0, 1], //Color32::from_rgba_premultiplied(0, 200, 0, 1),
+            esp_hitboxes_col_hid: [200, 0, 0, 1], //Color32::from_rgba_premultiplied(200, 0, 0, 1),
             esp_bones: true,
             esp_world: true,
 
@@ -46,12 +48,73 @@ impl Config {
             ignore_team: true
         }
     }
+
+    pub fn save(&self) {
+        let j = match serde_json::to_string_pretty(&self) {
+            Ok(json) => json,
+            Err(e) => {
+                println!("Failed to serialize config to JSON: {}", e);
+                return;
+            }
+        };
+
+        let mut file = match File::create("config.json") {
+            Ok(f) => f,
+            Err(e) => {
+                println!("Failed to create or open config file: {}", e);
+                return;
+            }
+        };
+
+        if let Err(e) = file.write_all(j.as_bytes()) {
+            println!("Failed to write config to file: {}", e);
+        }
+
+        println!("successfully saved to config.json");
+
+    }
+
+    pub fn load(log: bool) -> Self {
+        let mut file = match File::open("config.json") {
+            Ok(file) => file,
+            Err(e) => {
+                if log {
+                    println!("Failed to open config file, reverting to default: {}", e);
+                }
+                return Config::new();
+            }
+        };
+    
+        let mut contents = String::new();
+        if let Err(e) = file.read_to_string(&mut contents) {
+            if log {
+                println!("Failed to read config file, reverting to default: {}", e);
+            }
+            return Config::new();
+        }
+    
+        match serde_json::from_str::<Config>(&contents) {
+            Ok(config) => {
+                if log {
+                    println!("loaded config file");
+                }
+                config
+            }
+            Err(e) => {
+                if log {
+                    println!("Failed to parse config file, reverting to default: {}", e);
+                }
+                Config::new()
+            }
+        }
+    }
+
 }
 
 pub type SharedConfig = Arc<RwLock<Config>>;
 
 pub fn init_config() -> SharedConfig {
-    Arc::new(RwLock::new(Config::new()))
+    Arc::new(RwLock::new(Config::load(true)))
 }
 
 #[derive(Clone)]

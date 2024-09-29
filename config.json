@@ -1,0 +1,31 @@
+{
+  "window_size": [
+    1024,
+    768
+  ],
+  "gui_visuals": true,
+  "gui_combat": true,
+  "gui_misc": true,
+  "esp_nametags": true,
+  "esp_hitboxes": true,
+  "esp_hitboxes_col_vis": [
+    0,
+    73,
+    200,
+    1
+  ],
+  "esp_hitboxes_col_hid": [
+    39,
+    32,
+    44,
+    32
+  ],
+  "esp_bones": false,
+  "esp_world": true,
+  "aim_enabled": true,
+  "aim_fov": 5.0,
+  "aim_smoothing": 3.5,
+  "aim_shoot_delay": 130,
+  "trigger_enabled": true,
+  "ignore_team": true
+}
