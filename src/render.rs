@@ -158,9 +158,9 @@ impl Render {
                 continue;
             }
     
-            let mut color = egui::Color32::from_rgba_premultiplied(200, 0, 0, 1); 
+            let mut color = self.config.esp_hitboxes_col_hid;
             if player.bspotted {
-                color = egui::Color32::from_rgba_premultiplied(0, 200, 0, 1); 
+                color = self.config.esp_hitboxes_col_vis; 
             }
             
             let radius_min = hitbox.min_rad_2d;
@@ -365,6 +365,7 @@ impl EguiOverlay for Render {
             .show(egui_context, |ui| {
                 ui.checkbox(&mut edit_config.gui_visuals, "gui_visuals");
                 ui.checkbox(&mut edit_config.gui_combat, "gui_combat");
+                ui.checkbox(&mut edit_config.gui_misc, "gui_misc");
             });
             if edit_config.gui_visuals{
                 egui::Window::new("visuals")
@@ -372,6 +373,10 @@ impl EguiOverlay for Render {
                 .show(egui_context, |ui| {
                     ui.checkbox(&mut edit_config.esp_nametags, "esp_nametags");
                     ui.checkbox(&mut edit_config.esp_hitboxes, "esp_hitboxes");
+                    ui.with_layout(egui::Layout::left_to_right(egui::Align::Min), |ui| {
+                        ui.color_edit_button_srgba(&mut edit_config.esp_hitboxes_col_vis);
+                        ui.color_edit_button_srgba(&mut edit_config.esp_hitboxes_col_hid);
+                    });
                     ui.checkbox(&mut edit_config.esp_bones, "esp_bones");
                     ui.checkbox(&mut edit_config.esp_world, "esp_world");
                 });

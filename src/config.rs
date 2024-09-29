@@ -1,4 +1,5 @@
 use std::sync::{Arc, RwLock};
+use egui::Color32;
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct Config {
@@ -6,10 +7,14 @@ pub struct Config {
     pub gui_visuals: bool,
     pub gui_combat: bool,
     pub gui_misc: bool,
+
     pub esp_nametags: bool,
     pub esp_hitboxes: bool,
+    pub esp_hitboxes_col_vis: Color32,
+    pub esp_hitboxes_col_hid: Color32,
     pub esp_bones: bool,
     pub esp_world: bool,
+
     pub aim_enabled: bool,
     pub aim_fov: f32,
     pub aim_smoothing: f32,
@@ -24,10 +29,14 @@ impl Config {
             gui_visuals: true,
             gui_combat: true,
             gui_misc: true,
+
             esp_nametags: true,
             esp_hitboxes: true,
+            esp_hitboxes_col_vis: Color32::from_rgba_premultiplied(0, 200, 0, 1),
+            esp_hitboxes_col_hid: Color32::from_rgba_premultiplied(200, 0, 0, 1),
             esp_bones: true,
             esp_world: true,
+
             aim_enabled: true,
             aim_fov: 10.0,
             aim_smoothing: 3.5,
@@ -53,7 +62,7 @@ pub struct KeyState {
 impl KeyState {
     pub fn new() -> Self {
         Self {
-            show_gui: false,
+            show_gui: true,
             trigger: false,
             aim: false
         }
