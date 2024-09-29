@@ -39,9 +39,9 @@ impl Config {
             esp_world: true,
 
             aim_enabled: true,
-            aim_fov: 10.0,
+            aim_fov: 5.0,
             aim_smoothing: 3.5,
-            aim_shoot_delay: 150,
+            aim_shoot_delay: 130,
             trigger_enabled: true,
             ignore_team: true
         }

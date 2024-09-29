@@ -1,6 +1,5 @@
 use std::thread;
 use std::time::Duration;
-use std::sync::mpsc::{self, Sender, TryRecvError};
 use crossbeam::channel::Receiver;
 use std::sync::{Arc, RwLock, atomic::{AtomicBool, Ordering}};
 use rdev::{grab, simulate, Button, Event, EventType, SimulateError};
@@ -29,14 +28,23 @@ fn mouse_down() {
     match simulate(&EventType::ButtonPress(Button::Left)) {
         Ok(()) => (),
         Err(SimulateError) => {
-            println!("Failed click.");
+            println!("Failed to press mouse button.");
+        }
+    }
+}
+
+fn mouse_up() {
+    match simulate(&EventType::ButtonRelease(Button::Left)) {
+        Ok(()) => (),
+        Err(SimulateError) => {
+            println!("Failed to release mouse button.");
         }
     }
 }
 
 fn mouse_grabber(will_aim: Arc<RwLock<bool>>, shared_keystate: SharedKeyState, shared_config: SharedConfig) {
     let click_scheduled = Arc::new(AtomicBool::new(false));
-    let click_scheduled_clone = Arc::clone(&click_scheduled);
+    let click_held = Arc::new(AtomicBool::new(false));
 
     thread::spawn(move || {
         if let Err(error) = grab(move |event: Event| {
@@ -59,15 +67,21 @@ fn mouse_grabber(will_aim: Arc<RwLock<bool>>, shared_keystate: SharedKeyState, s
                         };
 
                         if will_aim_flag {
-                            if !click_scheduled_clone.load(Ordering::SeqCst) {
-                                click_scheduled_clone.store(true, Ordering::SeqCst);
+                            if !click_scheduled.load(Ordering::SeqCst) {
+                                click_scheduled.store(true, Ordering::SeqCst);
 
-                                let click_scheduled_inner = Arc::clone(&click_scheduled_clone);
+                                let click_held_inner = Arc::clone(&click_held);
+                                let click_scheduled_inner = Arc::clone(&click_scheduled);
 
                                 thread::spawn(move || {
                                     thread::sleep(Duration::from_millis(config.aim_shoot_delay));
-                                    click();
-                                    click_scheduled_inner.store(false, Ordering::SeqCst);
+                                    mouse_down();
+                                    click_held_inner.store(true, Ordering::SeqCst);
+
+                                    if !click_scheduled_inner.load(Ordering::SeqCst) {
+                                        mouse_up();
+                                        click_held_inner.store(false, Ordering::SeqCst);
+                                    }
                                 });
                             }
                             return None;
@@ -77,14 +91,21 @@ fn mouse_grabber(will_aim: Arc<RwLock<bool>>, shared_keystate: SharedKeyState, s
                 },
                 EventType::ButtonRelease(button) => {
                     if button == Button::Left {
-                        let mut keystate = shared_keystate.write().unwrap();
-                        keystate.aim = false;
+                        {
+                            let mut keystate = shared_keystate.write().unwrap();
+                            keystate.aim = false;
+                        }
+
+                        if click_held.load(Ordering::SeqCst) {
+                            mouse_up();
+                            click_held.store(false, Ordering::SeqCst);
+                        }
+
+                        click_scheduled.store(false, Ordering::SeqCst);
                     }
                     Some(event)
                 },
-                _ => {
-                    Some(event)
-                }
+                _ => Some(event),
             }
         }) {
             println!("Error: {:?}", error);
