@@ -1,7 +1,9 @@
 use std::thread;
 use std::time::Duration;
+use std::sync::mpsc::{self, Sender, TryRecvError};
 use crossbeam::channel::Receiver;
-use rdev::{simulate, Button, EventType, SimulateError};
+use std::sync::{Arc, RwLock, atomic::{AtomicBool, Ordering}};
+use rdev::{grab, simulate, Button, Event, EventType, SimulateError};
 use driver::Driver;
 use libc::INT_MAX;
 use sdk::WeaponClass::{get_weapon_class, WeaponClass};
@@ -23,6 +25,73 @@ fn click() {
     }
 }
 
+fn mouse_down() {
+    match simulate(&EventType::ButtonPress(Button::Left)) {
+        Ok(()) => (),
+        Err(SimulateError) => {
+            println!("Failed click.");
+        }
+    }
+}
+
+fn mouse_grabber(will_aim: Arc<RwLock<bool>>, shared_keystate: SharedKeyState, shared_config: SharedConfig) {
+    let click_scheduled = Arc::new(AtomicBool::new(false));
+    let click_scheduled_clone = Arc::clone(&click_scheduled);
+
+    thread::spawn(move || {
+        if let Err(error) = grab(move |event: Event| {
+            match event.event_type {
+                EventType::ButtonPress(button) => {
+                    if button == Button::Left {
+                        {
+                            let mut keystate = shared_keystate.write().unwrap();
+                            keystate.aim = true;
+                        }
+
+                        let will_aim_flag = {
+                            let will_aim = will_aim.read().unwrap();
+                            *will_aim
+                        };
+
+                        let config = {
+                            let config_read = shared_config.read().unwrap();
+                            config_read.clone()
+                        };
+
+                        if will_aim_flag {
+                            if !click_scheduled_clone.load(Ordering::SeqCst) {
+                                click_scheduled_clone.store(true, Ordering::SeqCst);
+
+                                let click_scheduled_inner = Arc::clone(&click_scheduled_clone);
+
+                                thread::spawn(move || {
+                                    thread::sleep(Duration::from_millis(config.aim_shoot_delay));
+                                    click();
+                                    click_scheduled_inner.store(false, Ordering::SeqCst);
+                                });
+                            }
+                            return None;
+                        }
+                    }
+                    Some(event)
+                },
+                EventType::ButtonRelease(button) => {
+                    if button == Button::Left {
+                        let mut keystate = shared_keystate.write().unwrap();
+                        keystate.aim = false;
+                    }
+                    Some(event)
+                },
+                _ => {
+                    Some(event)
+                }
+            }
+        }) {
+            println!("Error: {:?}", error);
+        }
+    });
+}
+
 pub fn run_combat(
     driver: Driver, 
     shared_local_player: SharedPlayerBase,
@@ -33,10 +102,13 @@ pub fn run_combat(
     thread::spawn(move || {
         let mut target: Player = Player::default();
         let mut aimbot_ms: i64 = 0;
+        let will_aim_shared = Arc::new(RwLock::new(false));
 
         let client_addr =  driver.read_module("libclient.so");
         let dwSensitivity: usize = driver.read_mem(client_addr + offsets::libclient_so::dwSensitivity);
         let sensitivity_raw: f32 = driver.read_mem(dwSensitivity + offsets::libclient_so::dwSensitivity_sensitivity);
+        
+        mouse_grabber(Arc::clone(&will_aim_shared), shared_keystate.clone(), shared_config.clone());
 
         loop {
             let config = {
@@ -87,27 +159,29 @@ pub fn run_combat(
                 }
             }
 
-            if !config.aim_enabled {
-                continue;
-            }
-
-            if closest_dist as i32 == INT_MAX {
+            if !config.aim_enabled || closest_dist as i32 == INT_MAX || target.bones_3d[0].pos.is_zero() {
+                let mut will_aim_write = will_aim_shared.try_write().unwrap();
+                *will_aim_write = false;
                 continue;
             }
 
             let target_pos = target.bones_3d[0].pos;
-            if target_pos.is_zero() {
-                continue;
-            }
-
             let mut angles: Vector3 = Vector3 { x: 0.0, y: 0.0, z: 0.0 };
             let view_angle: Vector2 = driver.read_mem(local_player.pawn + schemas::libclient_so::C_BasePlayerPawn::v_angle);
             let aimbot_angle = get_target_angle(&driver, target_pos, punch_angle, shots_fired, weapon_class, local_player.pawn);
             let aimbot_fov = get_fov(view_angle, aimbot_angle);
 
             if aimbot_fov > config.aim_fov {
+                let mut will_aim_write = will_aim_shared.try_write().unwrap();
+                *will_aim_write = false;    
                 continue;
             }
+
+            if !keystate.show_gui {
+                let mut will_aim_write = will_aim_shared.write().unwrap();
+                *will_aim_write = true;
+            }
+                
             
             angles.x = view_angle.x - aimbot_angle.x;
             angles.y = view_angle.y - aimbot_angle.y;
@@ -182,7 +256,7 @@ fn get_vec_punch(driver: &Driver, local_player: usize) -> Vector2 {
         return data;
     }
 
-    let aimpunch_size: u32 = (aim_punch_cache[0] & 0xFFFFFFFF) as u32;  // Extract the 32-bit size
+    let aimpunch_size: u32 = (aim_punch_cache[0] & 0xFFFFFFFF) as u32;
 
     if aimpunch_size < 1 {
         return data;

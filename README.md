@@ -11,6 +11,10 @@ By using this software, you acknowledge the following:
 
 Use responsibly and at your own risk.
 
+## Dependencies
+
+```sudo dnf install libevdev-devel```
+
 ## Setup
 
 - clone cs2-dumper to project root ```git clone git@github.com:a2x/cs2-dumper.git -b linux```

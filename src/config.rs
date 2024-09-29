@@ -18,6 +18,7 @@ pub struct Config {
     pub aim_enabled: bool,
     pub aim_fov: f32,
     pub aim_smoothing: f32,
+    pub aim_shoot_delay: u64,
     pub trigger_enabled: bool,
     pub ignore_team: bool
 }
@@ -40,6 +41,7 @@ impl Config {
             aim_enabled: true,
             aim_fov: 10.0,
             aim_smoothing: 3.5,
+            aim_shoot_delay: 150,
             trigger_enabled: true,
             ignore_team: true
         }
@@ -62,7 +64,7 @@ pub struct KeyState {
 impl KeyState {
     pub fn new() -> Self {
         Self {
-            show_gui: true,
+            show_gui: false,
             trigger: false,
             aim: false
         }
