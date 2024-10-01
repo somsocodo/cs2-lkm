@@ -1,12 +1,15 @@
 use egui_overlay::EguiOverlay;
 use egui_render_three_d::ThreeDBackend as DefaultGfxBackend;
 use egui_overlay::egui_window_glfw_passthrough;
-use egui::{ Context, Color32, Pos2, Order, Sense, Vec2, FontId, FontDefinitions, FontFamily, FontData};
+use egui::{ Context, Color32, Pos2, Order, Sense, Vec2, FontId, FontDefinitions, FontFamily, FontData, Stroke};
 use crossbeam::channel::Receiver;
 use std::sync::Once;
+use std::f32::consts::PI;
 use once_cell::sync::Lazy;
 
 use config::{SharedConfig, Config};
+use features::grenades::Grenade;
+use sdk::Vector::Vector3;
 use sdk::Player::Player;
 use sdk::Entity::Entity;
 use sdk::WeaponClass::{ get_grenade_class_from_index, GrenadeClass };
@@ -86,11 +89,60 @@ impl Render {
                 if grenade_class != GrenadeClass::Invalid {
                     for grenade in &self.grenade_helper.grenades {
                         if grenade.grenade_class == grenade_class {
-                            println!("{}", grenade.name);
+                            self.draw_grenade_helper(ui, &grenade);
                         }
                     }
                 }
             });
+    }
+
+    pub fn draw_circle(
+        ui: &egui::Ui, 
+        pos: Vector3, 
+        view_matrix: [[f32; 4]; 4],
+        radius: f32,         
+        filled: bool,        
+        color: Color32,      
+        thickness: f32,
+    ) {
+        let painter = ui.painter();
+    
+        let pos_2d = pos.world_to_screen(view_matrix);
+    
+        let step = 2.0 * PI / 25.0;
+        let mut points: Vec<Pos2> = Vec::new();
+    
+        for lat in (0..=25).map(|i| i as f32 * step) {
+            let point_3d = Vector3 { x: lat.cos() * radius, y: lat.sin() * radius, z: 0.0};
+            let point_2d = (pos + point_3d).world_to_screen(view_matrix);
+            let pos2 = Pos2::new(
+                point_2d.x, 
+                point_2d.y);
+            points.push(pos2);
+        }
+    
+
+            painter.add(egui::Shape::convex_polygon(
+                points.clone(),
+                color,
+                Stroke::default(),
+            ));
+        
+
+    }
+    
+
+    pub fn draw_grenade_helper(
+        &self,
+        ui: &egui::Ui,
+        grenade: &Grenade,
+    ) {
+        let view_matrix = {
+            let activestate_read = self.shared_activestae.read().unwrap();
+            activestate_read.view_matrix
+        };
+
+        Render::draw_circle(ui, grenade.pos, view_matrix, 5.0, true, Color32::WHITE, 1.0);
     }
 
     fn text_shadow(
@@ -391,6 +443,7 @@ impl EguiOverlay for Render {
             .show(egui_context, |ui| {
                 ui.checkbox(&mut edit_config.gui_visuals, "gui_visuals");
                 ui.checkbox(&mut edit_config.gui_combat, "gui_combat");
+                ui.checkbox(&mut edit_config.gui_grenades, "gui_grenades");
                 ui.checkbox(&mut edit_config.gui_misc, "gui_misc");
             });
             if edit_config.gui_visuals{

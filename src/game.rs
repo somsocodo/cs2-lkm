@@ -126,9 +126,6 @@ pub fn update_players(
                         continue;
                     }
 
-                    let mut activestate_write = shared_activestate.write().unwrap();
-                    activestate_write.weapon_index = get_weapon_index(&driver, local_player);
-
                     let name: CUtlString = driver.read_mem(current_controller + schemas::libclient_so::CBasePlayerController::m_iszPlayerName);
                     let feet_pos: Vector3 = driver.read_mem(current_pawn + schemas::libclient_so::C_BasePlayerPawn::m_vOldOrigin);
                     let mut eye_pos: Vector3 = feet_pos + driver.read_mem(current_pawn + schemas::libclient_so::C_BaseModelEntity::m_vecViewOffset);
@@ -180,6 +177,10 @@ pub fn update_players(
                     }
 
             }
+            let mut activestate_write = shared_activestate.write().unwrap();
+            activestate_write.weapon_index = get_weapon_index(&driver, local_player);
+            activestate_write.view_matrix = view_matrix;
+
             player_sender.send(players).unwrap();
             
             thread::sleep(Duration::from_millis(3));

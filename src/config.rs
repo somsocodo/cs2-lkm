@@ -2,6 +2,7 @@ use std::sync::{Arc, RwLock};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{Read, Write};
+use sdk::Player::PlayerBase;
 
 #[derive(Serialize, Deserialize, Clone, Copy, PartialEq)]
 pub struct Config {
@@ -124,6 +125,8 @@ pub struct ActiveState {
     pub show_gui: bool,
     pub trigger: bool,
     pub aim: bool,
+    pub local_player: PlayerBase, // TODO: move shared local player here.
+    pub view_matrix: [[f32; 4]; 4],
     pub weapon_index: i16
 }
 
@@ -133,6 +136,8 @@ impl ActiveState {
             show_gui: true,
             trigger: false,
             aim: false,
+            local_player: PlayerBase::default(),
+            view_matrix: [[0.0; 4]; 4],
             weapon_index: 0
         }
     }
