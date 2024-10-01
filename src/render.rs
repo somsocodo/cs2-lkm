@@ -93,9 +93,7 @@ impl Render {
 
                 if grenade_class != GrenadeClass::Invalid {
                     for grenade in &self.grenade_helper.grenades {
-                        if grenade.grenade_class == grenade_class {
-                            self.grenade_helper.draw(ui, &grenade, view_matrix);
-                        }
+                        self.grenade_helper.draw(ui, self.shared_config.clone(), &grenade, view_matrix);
                     }
                 }
             });
@@ -136,7 +134,7 @@ impl Render {
 
     }
     
-    fn text_shadow(
+    pub fn text_shadow(
         painter: &egui::Painter,
         pos: Pos2,
         align: egui::Align2,

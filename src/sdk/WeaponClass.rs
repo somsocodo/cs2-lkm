@@ -21,6 +21,19 @@ pub enum GrenadeClass {
     Molotov
 }
 
+impl GrenadeClass {
+    pub fn to_icon(&self) -> &str {
+        match self {
+            GrenadeClass::HeGrenade => "j",
+            GrenadeClass::Flashbang => "i",
+            GrenadeClass::SmokeGrenade => "k",
+            GrenadeClass::Decoy => "m",
+            GrenadeClass::Molotov => "l",
+            _ => "",
+        }
+    }
+}
+
 pub fn get_weapon_index(driver: &Driver, pawn: usize) -> i16 {
     let weapon: usize = driver.read_mem(pawn + schemas::libclient_so::C_CSPlayerPawnBase::m_pClippingWeapon);
 
