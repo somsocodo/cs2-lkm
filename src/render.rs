@@ -86,10 +86,15 @@ impl Render {
                     get_grenade_class_from_index(activestate_read.weapon_index)
                 };
 
+                let view_matrix = {
+                    let activestate_read = self.shared_activestae.read().unwrap();
+                    activestate_read.view_matrix
+                };
+
                 if grenade_class != GrenadeClass::Invalid {
                     for grenade in &self.grenade_helper.grenades {
                         if grenade.grenade_class == grenade_class {
-                            self.draw_grenade_helper(ui, &grenade);
+                            self.grenade_helper.draw(ui, &grenade, view_matrix);
                         }
                     }
                 }
@@ -102,7 +107,8 @@ impl Render {
         view_matrix: [[f32; 4]; 4],
         radius: f32,         
         filled: bool,        
-        color: Color32,      
+        fill_colour: Color32,      
+        stroke_colour: Color32,
         thickness: f32,
     ) {
         let painter = ui.painter();
@@ -115,36 +121,21 @@ impl Render {
         for lat in (0..=25).map(|i| i as f32 * step) {
             let point_3d = Vector3 { x: lat.cos() * radius, y: lat.sin() * radius, z: 0.0};
             let point_2d = (pos + point_3d).world_to_screen(view_matrix);
-            let pos2 = Pos2::new(
+            points.push(Pos2::new(
                 point_2d.x, 
-                point_2d.y);
-            points.push(pos2);
+                point_2d.y));
         }
     
 
             painter.add(egui::Shape::convex_polygon(
                 points.clone(),
-                color,
-                Stroke::default(),
+                fill_colour,
+                Stroke::new(thickness, stroke_colour),
             ));
         
 
     }
     
-
-    pub fn draw_grenade_helper(
-        &self,
-        ui: &egui::Ui,
-        grenade: &Grenade,
-    ) {
-        let view_matrix = {
-            let activestate_read = self.shared_activestae.read().unwrap();
-            activestate_read.view_matrix
-        };
-
-        Render::draw_circle(ui, grenade.pos, view_matrix, 5.0, true, Color32::WHITE, 1.0);
-    }
-
     fn text_shadow(
         painter: &egui::Painter,
         pos: Pos2,

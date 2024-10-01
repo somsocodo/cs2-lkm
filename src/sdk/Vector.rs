@@ -121,6 +121,10 @@ impl Vector3 {
         self.x == 0.0 && self.y == 0.0 && self.z == 0.0
     }
 
+    pub fn length(&self) -> f32 {
+        (self.x.powi(2) + self.y.powi(2) + self.z.powi(2)).sqrt()
+    }
+
 }
 
 impl Add for Vector3 {
