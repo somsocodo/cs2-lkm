@@ -10,6 +10,7 @@ extern crate rdev;
 extern crate serde;
 extern crate serde_json;
 
+use features::grenades::GrenadeHelper;
 use rdev::{listen, Event, EventType, Key, Button};
 
 extern crate crossbeam;
@@ -29,8 +30,8 @@ use sdk::Entity::{ EntityBase, Entity };
 mod config;
 use config::{init_config, init_keystate, SharedKeyState};
 
-mod features {pub mod combat;}
-use features::{ combat };
+mod features {pub mod combat; pub mod grenades;}
+use features::{ combat, grenades };
 
 mod cs2_dumper {pub mod offsets; pub mod libclient_so;}
 
@@ -92,7 +93,8 @@ fn main() {
         player_receiver.clone(), 
         world_receiver.clone(),
         keystate.clone(), 
-        config.clone());
+        config.clone(),
+    GrenadeHelper::new(driver.clone(), local_player.clone()));
 
     cache_players_handle.join().unwrap();
     cache_world_handle.join().unwrap();

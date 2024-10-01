@@ -8,6 +8,7 @@ pub struct Config {
     pub window_size: (i32, i32),
     pub gui_visuals: bool,
     pub gui_combat: bool,
+    pub gui_grenades: bool,
     pub gui_misc: bool,
 
     pub esp_nametags: bool,
@@ -31,6 +32,7 @@ impl Config {
             window_size: (1024, 768),
             gui_visuals: true,
             gui_combat: true,
+            gui_grenades: true,
             gui_misc: true,
 
             esp_nametags: true,
@@ -127,7 +129,7 @@ pub struct KeyState {
 impl KeyState {
     pub fn new() -> Self {
         Self {
-            show_gui: false,
+            show_gui: true,
             trigger: false,
             aim: false
         }

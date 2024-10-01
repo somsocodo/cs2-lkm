@@ -12,28 +12,36 @@ use sdk::Entity::Entity;
 use sdk::Icon::IconResolver;
 
 use crate::config::SharedKeyState;
+use crate::features::grenades::GrenadeHelper;
 
 pub fn run_overlay(
     player_receiver: Receiver<Vec<Player>>, 
     world_receiver: Receiver<Vec<Entity>>, 
     shared_keystate: SharedKeyState, 
-    shared_config: SharedConfig) {
+    shared_config: SharedConfig,
+    grenade_helper: GrenadeHelper) {
     
     egui_overlay::start(Render { 
         player_receiver,
         world_receiver,
         shared_keystate,
         shared_config,
-        config: Config::load(false)
+        config: Config::load(false),
+        grenade_helper,
+        grenade_name: String::new(),
+        grenade_action: String::new()
     });
 }
 
 pub struct Render {
-    pub player_receiver: Receiver<Vec<Player>>,
-    pub world_receiver: Receiver<Vec<Entity>>,
-    pub shared_keystate: SharedKeyState,
-    pub shared_config: SharedConfig,
-    pub config: Config
+    player_receiver: Receiver<Vec<Player>>,
+    world_receiver: Receiver<Vec<Entity>>,
+    shared_keystate: SharedKeyState,
+    shared_config: SharedConfig,
+    config: Config,
+    grenade_helper: GrenadeHelper,
+    grenade_name: String,
+    grenade_action: String
 }
 
 static ICON_RESOLVER: Lazy<IconResolver> = Lazy::new(|| IconResolver::new());
@@ -351,12 +359,15 @@ impl EguiOverlay for Render {
             setup(egui_context);
         });
 
-        let keystate = self.shared_keystate.read().unwrap();
-        
+        let show_gui = {
+            let keystate = self.shared_keystate.read().unwrap();
+            keystate.show_gui
+        };
+
         glfw_backend.window.set_pos(0, 35); //35 for cs2 windowed
         glfw_backend.window.set_size(self.config.window_size.0, self.config.window_size.1);
 
-        if keystate.show_gui {
+        if show_gui {
             glfw_backend.set_passthrough(false);
             let mut edit_config = self.config;
             if !glfw_backend.focused {
@@ -395,6 +406,19 @@ impl EguiOverlay for Render {
                     ui.label("aim_shoot_delay");
                     ui.add(egui::Slider::new(&mut edit_config.aim_shoot_delay, 0..=500));
                     ui.checkbox(&mut edit_config.trigger_enabled, "trigger_enabled");
+                });
+            }
+            if edit_config.gui_grenades{
+                egui::Window::new("grenade helper")
+                .resizable(true)
+                .show(egui_context, |ui| {
+                    ui.label("Name:");
+                    ui.text_edit_singleline(&mut self.grenade_name);
+                    ui.label("Action:");
+                    ui.text_edit_singleline(&mut self.grenade_action);
+                    if ui.button("save grenade").clicked() {
+                        self.grenade_helper.save(self.grenade_name.clone(), self.grenade_action.clone());
+                    }
                 });
             }
             if edit_config.gui_misc{

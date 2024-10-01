@@ -5,6 +5,7 @@
   ],
   "gui_visuals": true,
   "gui_combat": true,
+  "gui_grenades": true,
   "gui_misc": true,
   "esp_nametags": true,
   "esp_hitboxes": true,
