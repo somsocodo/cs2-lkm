@@ -10,7 +10,7 @@ use sdk::CUtl::CUtlVector;
 use sdk::Player::Player;
 use sdk::Vector::{ Vector2, Vector3, get_fov };
 
-use crate::{config::{ SharedConfig, SharedKeyState }, sdk::Player::SharedPlayerBase};
+use crate::{config::{ SharedConfig, SharedActiveState }, sdk::Player::SharedPlayerBase};
 
 use cs2_dumper::offsets::cs2_dumper::offsets;
 use cs2_dumper::libclient_so::cs2_dumper::schemas;
@@ -42,7 +42,7 @@ fn mouse_up() {
     }
 }
 
-fn mouse_grabber(will_aim: Arc<RwLock<bool>>, shared_keystate: SharedKeyState, shared_config: SharedConfig) {
+fn mouse_grabber(will_aim: Arc<RwLock<bool>>, shared_keystate: SharedActiveState, shared_config: SharedConfig) {
     let click_scheduled = Arc::new(AtomicBool::new(false));
     let click_held = Arc::new(AtomicBool::new(false));
 
@@ -116,7 +116,7 @@ fn mouse_grabber(will_aim: Arc<RwLock<bool>>, shared_keystate: SharedKeyState, s
 pub fn run_combat(
     driver: Driver, 
     shared_local_player: SharedPlayerBase,
-    shared_keystate: SharedKeyState,
+    shared_activestate: SharedActiveState,
     shared_config: SharedConfig,
     player_receiver: Receiver<Vec<Player>>
 ) -> thread::JoinHandle<()> {
@@ -129,7 +129,7 @@ pub fn run_combat(
         let dwSensitivity: usize = driver.read_mem(client_addr + offsets::libclient_so::dwSensitivity);
         let sensitivity_raw: f32 = driver.read_mem(dwSensitivity + offsets::libclient_so::dwSensitivity_sensitivity);
         
-        mouse_grabber(Arc::clone(&will_aim_shared), shared_keystate.clone(), shared_config.clone());
+        mouse_grabber(Arc::clone(&will_aim_shared), shared_activestate.clone(), shared_config.clone());
 
         loop {
             let config = {
@@ -137,9 +137,9 @@ pub fn run_combat(
                 config_read.clone()
             };
 
-            let keystate = {
-                let keystate_read = shared_keystate.read().unwrap();
-                keystate_read.clone()
+            let activestate = {
+                let activestate_read = shared_activestate.read().unwrap();
+                activestate_read.clone()
             };
 
             let local_player = {
@@ -165,7 +165,7 @@ pub fn run_combat(
                         continue;
                     }
 
-                    if config.trigger_enabled && keystate.trigger && player.in_cross && punch_angle.x > -0.01 {
+                    if config.trigger_enabled && activestate.trigger && player.in_cross && punch_angle.x > -0.01 {
                         click();
                     }
                 
@@ -198,7 +198,7 @@ pub fn run_combat(
                 continue;
             }
 
-            if !keystate.show_gui {
+            if !activestate.show_gui {
                 let mut will_aim_write = will_aim_shared.write().unwrap();
                 *will_aim_write = true;
             }
@@ -251,7 +251,7 @@ pub fn run_combat(
             let duration = now.duration_since(std::time::UNIX_EPOCH).expect("Time went backwards");
             let current_ms = duration.as_millis() as i64;
 
-            if !keystate.show_gui && keystate.aim && current_ms - aimbot_ms > ms {
+            if !activestate.show_gui && activestate.aim && current_ms - aimbot_ms > ms {
                 aimbot_ms = current_ms;
                 driver.send_input(0x02, 0, smooth_x as i32).unwrap();
                 driver.send_input(0x02, 1, smooth_y as i32).unwrap();

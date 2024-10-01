@@ -9,22 +9,23 @@ use once_cell::sync::Lazy;
 use config::{SharedConfig, Config};
 use sdk::Player::Player;
 use sdk::Entity::Entity;
+use sdk::WeaponClass::{ get_grenade_class_from_index, GrenadeClass };
 use sdk::Icon::IconResolver;
 
-use crate::config::SharedKeyState;
+use crate::config::SharedActiveState;
 use crate::features::grenades::GrenadeHelper;
 
 pub fn run_overlay(
     player_receiver: Receiver<Vec<Player>>, 
     world_receiver: Receiver<Vec<Entity>>, 
-    shared_keystate: SharedKeyState, 
+    shared_keystate: SharedActiveState, 
     shared_config: SharedConfig,
     grenade_helper: GrenadeHelper) {
     
     egui_overlay::start(Render { 
         player_receiver,
         world_receiver,
-        shared_keystate,
+        shared_activestae: shared_keystate,
         shared_config,
         config: Config::load(false),
         grenade_helper,
@@ -36,7 +37,7 @@ pub fn run_overlay(
 pub struct Render {
     player_receiver: Receiver<Vec<Player>>,
     world_receiver: Receiver<Vec<Entity>>,
-    shared_keystate: SharedKeyState,
+    shared_activestae: SharedActiveState,
     shared_config: SharedConfig,
     config: Config,
     grenade_helper: GrenadeHelper,
@@ -74,6 +75,18 @@ impl Render {
                     for entity in entities.iter() {
                         if self.config.esp_world {
                             self.draw_entity(entity, painter);
+                        }
+                    }
+                }
+                let grenade_class: GrenadeClass = {
+                    let activestate_read = self.shared_activestae.read().unwrap();
+                    get_grenade_class_from_index(activestate_read.weapon_index)
+                };
+
+                if grenade_class != GrenadeClass::Invalid {
+                    for grenade in &self.grenade_helper.grenades {
+                        if grenade.grenade_class == grenade_class {
+                            println!("{}", grenade.name);
                         }
                     }
                 }
@@ -360,8 +373,8 @@ impl EguiOverlay for Render {
         });
 
         let show_gui = {
-            let keystate = self.shared_keystate.read().unwrap();
-            keystate.show_gui
+            let activestate_read = self.shared_activestae.read().unwrap();
+            activestate_read.show_gui
         };
 
         glfw_backend.window.set_pos(0, 35); //35 for cs2 windowed

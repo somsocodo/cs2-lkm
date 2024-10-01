@@ -11,11 +11,21 @@ pub enum WeaponClass {
     Shotgun,
 }
 
-pub fn get_weapon_class(driver: &Driver, pawn: usize) -> WeaponClass {
+#[derive(PartialEq)]
+pub enum GrenadeClass {
+    Invalid,
+    HeGrenade,
+    Flashbang,
+    SmokeGrenade,
+    Decoy,
+    Molotov
+}
+
+pub fn get_weapon_index(driver: &Driver, pawn: usize) -> i16 {
     let weapon: usize = driver.read_mem(pawn + schemas::libclient_so::C_CSPlayerPawnBase::m_pClippingWeapon);
 
     if weapon == 0 {
-        return WeaponClass::Invalid;
+        return 0;
     }
 
     let weapon_index: i16 = driver.read_mem(
@@ -23,6 +33,39 @@ pub fn get_weapon_class(driver: &Driver, pawn: usize) -> WeaponClass {
         + schemas::libclient_so::C_AttributeContainer::m_Item 
         + schemas::libclient_so::C_EconItemView::m_iItemDefinitionIndex,
     );
+
+    return weapon_index;
+}
+
+pub fn get_grenade_class_from_index(weapon_index: i16) -> GrenadeClass {
+    match weapon_index {
+        44 => GrenadeClass::HeGrenade,
+        43 => GrenadeClass::Flashbang,
+        45 => GrenadeClass::SmokeGrenade,
+        47 => GrenadeClass::Decoy,
+        46 => GrenadeClass::Molotov,
+        48 => GrenadeClass::Molotov,
+        _ => GrenadeClass::Invalid,
+    }
+}
+
+pub fn get_grenade_class(driver: &Driver, pawn: usize) -> GrenadeClass {
+    let weapon_index: i16 = get_weapon_index(&driver, pawn);
+
+    if weapon_index == 0 {
+        return GrenadeClass::Invalid;
+    }
+
+    get_grenade_class_from_index(weapon_index)
+}
+
+pub fn get_weapon_class(driver: &Driver, pawn: usize) -> WeaponClass {
+
+    let weapon_index: i16 = get_weapon_index(&driver, pawn);
+
+    if weapon_index == 0 {
+        return WeaponClass::Invalid;
+    }
 
     let knife_weapons = [42, 59];
     if knife_weapons.contains(&weapon_index) {

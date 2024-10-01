@@ -28,7 +28,7 @@ use sdk::Player::{ PlayerBase, Player};
 use sdk::Entity::{ EntityBase, Entity };
 
 mod config;
-use config::{init_config, init_keystate, SharedKeyState};
+use config::{init_config, init_keystate, SharedActiveState};
 
 mod features {pub mod combat; pub mod grenades;}
 use features::{ combat, grenades };
@@ -51,8 +51,8 @@ fn main() {
     let _pid = driver.set_task("cs2");
 
     let config = init_config();
-    let keystate = init_keystate();
-    key_listener(keystate.clone());
+    let activestate = init_keystate();
+    key_listener(activestate.clone());
     
     let local_player = Arc::new(RwLock::new(PlayerBase::default()));
     let (player_cache_sender, player_cache_receiver) = channel::unbounded::<Vec<PlayerBase>>();
@@ -73,6 +73,7 @@ fn main() {
         driver.clone(), 
         local_player.clone(),
         config.clone(),
+        activestate.clone(),
         player_cache_receiver, 
         player_sender);
 
@@ -85,14 +86,14 @@ fn main() {
     let combat_handle = combat::run_combat(
             driver.clone(),
             local_player.clone(),
-            keystate.clone(),
+            activestate.clone(),
             config.clone(),
             player_receiver.clone());
 
     render::run_overlay(
         player_receiver.clone(), 
         world_receiver.clone(),
-        keystate.clone(), 
+        activestate.clone(), 
         config.clone(),
     GrenadeHelper::new(driver.clone(), local_player.clone()));
 
@@ -105,34 +106,34 @@ fn main() {
 }
 
 
-fn key_listener(keystate: SharedKeyState) -> () {
+fn key_listener(activestate: SharedActiveState) -> () {
     thread::spawn(move || {
         if let Err(error) = listen(move |event: Event| {
             match event.event_type {
                 EventType::KeyPress(key) => {
                     if key == Key::Insert {
-                        let mut keystate = keystate.write().unwrap();
-                        keystate.show_gui = !keystate.show_gui;
+                        let mut activestate = activestate.write().unwrap();
+                        activestate.show_gui = !activestate.show_gui;
                     }
                 },
                 EventType::ButtonPress(button) => {
                     if button == Button::Unknown(8) {
-                        let mut keystate = keystate.write().unwrap();
-                        keystate.trigger = true;
+                        let mut activestate = activestate.write().unwrap();
+                        activestate.trigger = true;
                     }
                     if button == Button::Left {
-                        let mut keystate = keystate.write().unwrap();
-                        keystate.aim = true;
+                        let mut activestate = activestate.write().unwrap();
+                        activestate.aim = true;
                     }
                 },
                 EventType::ButtonRelease(button) => {
                     if button == Button::Unknown(8) {
-                        let mut keystate = keystate.write().unwrap();
-                        keystate.trigger = false;
+                        let mut activestate = activestate.write().unwrap();
+                        activestate.trigger = false;
                     }
                     if button == Button::Left {
-                        let mut keystate = keystate.write().unwrap();
-                        keystate.aim = false;
+                        let mut activestate = activestate.write().unwrap();
+                        activestate.aim = false;
                     }
                 },
                 _ => {}

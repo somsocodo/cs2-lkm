@@ -120,24 +120,26 @@ pub fn init_config() -> SharedConfig {
 }
 
 #[derive(Clone)]
-pub struct KeyState {
+pub struct ActiveState {
     pub show_gui: bool,
     pub trigger: bool,
-    pub aim: bool
+    pub aim: bool,
+    pub weapon_index: i16
 }
 
-impl KeyState {
+impl ActiveState {
     pub fn new() -> Self {
         Self {
             show_gui: true,
             trigger: false,
-            aim: false
+            aim: false,
+            weapon_index: 0
         }
     }
 }
 
-pub type SharedKeyState = Arc<RwLock<KeyState>>;
+pub type SharedActiveState = Arc<RwLock<ActiveState>>;
 
-pub fn init_keystate() -> SharedKeyState {
-    Arc::new(RwLock::new(KeyState::new()))
+pub fn init_keystate() -> SharedActiveState {
+    Arc::new(RwLock::new(ActiveState::new()))
 }

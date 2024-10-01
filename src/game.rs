@@ -5,11 +5,12 @@ use crossbeam::channel::Receiver;
 
 
 use driver::Driver;
-use crate::config::SharedConfig;
+use crate::config::{ SharedConfig, SharedActiveState };
 use sdk::CUtl::CUtlString;
 use sdk::Player::{ PlayerBase, SharedPlayerBase, Player};
 use sdk::Entity::{ EntityBase, Entity };
 use sdk::Vector::Vector3;
+use sdk::WeaponClass::get_weapon_index;
 
 use cs2_dumper::offsets::cs2_dumper::offsets;
 use cs2_dumper::libclient_so::cs2_dumper::schemas;
@@ -61,6 +62,7 @@ pub fn update_players(
     driver: Driver, 
     shared_local_player: SharedPlayerBase,
     shared_config: SharedConfig,
+    shared_activestate: SharedActiveState,
     player_cache_receiver: Receiver<Vec<PlayerBase>>,
     player_sender: Sender<Vec<Player>>
 ) -> thread::JoinHandle<()> {
@@ -113,8 +115,8 @@ pub fn update_players(
                     }
 
                     if driver.read_mem(current_controller + schemas::libclient_so::CBasePlayerController::m_bIsLocalPlayerController){
-                        let mut local_player_edit = shared_local_player.write().unwrap();
-                        *local_player_edit = player_base.clone();
+                        let mut local_player_write = shared_local_player.write().unwrap();
+                        *local_player_write = player_base.clone();
                         local_player = current_pawn;
                         local_idx = player_base.idx;
                         continue;
@@ -123,6 +125,9 @@ pub fn update_players(
                     if local_player == 0 {
                         continue;
                     }
+
+                    let mut activestate_write = shared_activestate.write().unwrap();
+                    activestate_write.weapon_index = get_weapon_index(&driver, local_player);
 
                     let name: CUtlString = driver.read_mem(current_controller + schemas::libclient_so::CBasePlayerController::m_iszPlayerName);
                     let feet_pos: Vector3 = driver.read_mem(current_pawn + schemas::libclient_so::C_BasePlayerPawn::m_vOldOrigin);
