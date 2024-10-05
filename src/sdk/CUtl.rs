@@ -1,4 +1,4 @@
-use std::ffi::{ CStr, CString };
+use std::ffi::CString;
 use libc::c_char;
 use std::str;
 

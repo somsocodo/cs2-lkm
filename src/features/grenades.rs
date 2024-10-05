@@ -81,7 +81,7 @@ impl GrenadeHelper {
                                 self.grenades.push(grenade);
                             }
                         }
-                        println!("grenades loaded for map: {}", map_name_str);
+                        println!("loaded grenades for map: {}", map_name_str);
                         return;
                     }
                 }
@@ -228,8 +228,8 @@ impl GrenadeHelper {
                 Render::text_shadow(painter, Pos2::new(throw_pos_2d.x, throw_pos_2d.y), egui::Align2::LEFT_BOTTOM, &grenade.action, Color32::WHITE, &font_id_text);
             }
         
-            Render::draw_circle(ui, grenade.pos, view_matrix, 12.0, true, fill_colour, stroke_colour, 3.0);
-            Render::draw_circle(ui, grenade.pos, view_matrix, 0.5, true, Color32::WHITE, stroke_colour, 0.0);
+            Render::draw_circle(ui, grenade.pos, view_matrix, 12.0, fill_colour, stroke_colour, 3.0);
+            Render::draw_circle(ui, grenade.pos, view_matrix, 0.5, Color32::WHITE, stroke_colour, 0.0);
         
             if distance > 10.0 {
                 let text_pos = Vector3 { x: grenade.pos.x, y: grenade.pos.y, z: grenade.pos.z + 15.0 };   

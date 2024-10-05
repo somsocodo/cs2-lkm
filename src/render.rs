@@ -8,7 +8,6 @@ use std::f32::consts::PI;
 use once_cell::sync::Lazy;
 
 use config::{SharedConfig, Config};
-use features::grenades::Grenade;
 use sdk::Vector::Vector3;
 use sdk::Player::Player;
 use sdk::Entity::Entity;
@@ -104,15 +103,12 @@ impl Render {
         pos: Vector3, 
         view_matrix: [[f32; 4]; 4],
         radius: f32,         
-        filled: bool,        
         fill_colour: Color32,      
         stroke_colour: Color32,
         thickness: f32,
     ) {
         let painter = ui.painter();
-    
-        let pos_2d = pos.world_to_screen(view_matrix);
-    
+        
         let step = 2.0 * PI / 25.0;
         let mut points: Vec<Pos2> = Vec::new();
     
