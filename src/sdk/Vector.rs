@@ -1,5 +1,8 @@
 use std::ops::{Add, Sub, Mul, MulAssign};
 use std::f32::consts::PI;
+use serde::{Serialize, Deserialize, Serializer, Deserializer};
+use serde::ser::SerializeTuple;
+use serde::de::{self, Visitor, SeqAccess};
 
 #[derive(Copy, Clone)]
 pub struct Vector4 {
@@ -168,6 +171,48 @@ impl MulAssign<f32> for Vector3 {
         self.x *= rhs;
         self.y *= rhs;
         self.z *= rhs;
+    }
+}
+
+impl Serialize for Vector3 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer, // Constrain S to the Serializer trait
+    {
+        let mut tup = serializer.serialize_tuple(3)?;
+        tup.serialize_element(&self.x)?;
+        tup.serialize_element(&self.y)?;
+        tup.serialize_element(&self.z)?;
+        tup.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for Vector3 {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>, // Constrain D to the Deserializer trait
+    {
+        struct Vector3Visitor;
+
+        impl<'de> Visitor<'de> for Vector3Visitor {
+            type Value = Vector3;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("a tuple with three floats")
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Vector3, A::Error>
+            where
+                A: SeqAccess<'de>,
+            {
+                let x = seq.next_element()?.ok_or_else(|| de::Error::invalid_length(0, &self))?;
+                let y = seq.next_element()?.ok_or_else(|| de::Error::invalid_length(1, &self))?;
+                let z = seq.next_element()?.ok_or_else(|| de::Error::invalid_length(2, &self))?;
+                Ok(Vector3 { x, y, z })
+            }
+        }
+
+        deserializer.deserialize_tuple(3, Vector3Visitor)
     }
 }
 

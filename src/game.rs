@@ -218,7 +218,7 @@ pub fn cache_world(
                 let class_name_addr: usize = driver.read_mem(entity_identity + 0x20);
                 let class_name: CUtlString = driver.read_mem(class_name_addr);
                 
-                let class_name_str = class_name.to_str();
+                let class_name_str = class_name.to_string();
                 let len = class_name_str.len();
 
                 if len < 9 { // cannot contain weapon || projectile

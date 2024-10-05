@@ -2,15 +2,22 @@ use driver::Driver;
 use config::SharedConfig;
 use sdk::Vector::{ Vector2, Vector3};
 use sdk::Vector::vec_translate;
+use crate::sdk::CUtl::CUtlString;
 use crate::sdk::Player::{ SharedPlayerBase, PlayerBase };
 use render::Render;
 use sdk::WeaponClass::{get_grenade_class, GrenadeClass};
 
 use egui::{ Color32 , Pos2, FontId, FontFamily };
+use serde::{Serialize, Deserialize};
+use std::collections::HashMap;
+use std::fs::{File, OpenOptions};
+use std::io::{ Seek, Read, Write};
+use std::error::Error;
 
 use cs2_dumper::offsets::cs2_dumper::offsets;
 use cs2_dumper::libclient_so::cs2_dumper::schemas;
 
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Grenade {
     pub name: String,
     pub action: String,
@@ -60,9 +67,58 @@ impl GrenadeHelper {
             throw_pos,
         };
 
-        println!("saving grenade {}", grenade.name);
-        self.grenades.push(grenade);
+        let matchmaking_addr: usize =  self.driver.read_module("libmatchmaking.so");
+        let p_map_name: usize = self.driver.read_mem(matchmaking_addr + offsets::libmatchmaking_so::dwGameTypes_mapName);
+        let map_name: CUtlString = self.driver.read_mem(p_map_name);
+        let map_name_str = map_name.to_string();
+
+        self.grenades.push(grenade.clone());
         
+        if let Err(e) = self.save_to_json(&map_name_str, grenade) {
+            println!("failed to save grenade{}", e);
+        } else {
+            println!("saved grenade");
+        }
+        
+    }
+
+    fn save_to_json(&self, map_name: &str, grenade: Grenade) -> Result<(), Box<dyn Error>> {
+        let mut file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .open("grenades.json")?;
+    
+        let mut contents = String::new();
+        file.read_to_string(&mut contents)?;
+    
+        let mut grenades_by_map: Vec<HashMap<String, Vec<Grenade>>> = if !contents.is_empty() {
+            serde_json::from_str(&contents).unwrap_or_else(|_| Vec::new())
+        } else {
+            Vec::new()
+        };
+    
+        let mut map_found = false;
+        for map in &mut grenades_by_map {
+            if map.contains_key(map_name) {
+                map.get_mut(map_name).unwrap().push(grenade.clone());
+                map_found = true;
+                break;
+            }
+        }
+    
+        if !map_found {
+            let mut new_map = HashMap::new();
+            new_map.insert(map_name.to_string(), vec![grenade]);
+            grenades_by_map.push(new_map);
+        }
+    
+        file.seek(std::io::SeekFrom::Start(0))?;
+    
+        let j = serde_json::to_string_pretty(&grenades_by_map)?;
+        file.write_all(j.as_bytes())?;
+    
+        Ok(())
     }
 
     pub fn draw(

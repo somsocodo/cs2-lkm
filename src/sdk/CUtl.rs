@@ -2,9 +2,10 @@ use std::ffi::{ CStr, CString };
 use libc::c_char;
 use std::str;
 
+#[repr(C)]
 #[derive(Copy, Clone)]
 pub struct CUtlString {
-    text: [c_char; 512]
+    pub text: [c_char; 512]
 }
 
 impl Default for CUtlString {
@@ -28,9 +29,20 @@ impl CUtlString {
         CUtlString { text: buffer }
     }
 
-    pub fn to_str(&self) -> &str {
-        let c_str = unsafe { CStr::from_ptr(self.text.as_ptr()) };
-        c_str.to_str().unwrap_or("")
+    pub fn to_string(&self) -> String {
+        let mut chars = Vec::new();
+        let mut ptr = self.text.as_ptr();
+    
+        unsafe {
+            while *ptr != 0 {
+                if *ptr != -1 as c_char {
+                    chars.push(*ptr as u8);
+                }
+                ptr = ptr.add(1);
+            }
+        }
+    
+        String::from_utf8(chars).unwrap_or_else(|_| String::new())
     }
 }
 

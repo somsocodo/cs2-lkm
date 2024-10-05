@@ -164,7 +164,7 @@ impl Render {
         let font_id_text = FontId::new(10.0, FontFamily::Monospace);
         let font_id_icon = FontId::new(20.0, FontFamily::Name("icons".into()));
 
-        if let Some(icon) = ICON_RESOLVER.resolve_icon(entity.class_name.to_str()) {
+        if let Some(icon) = ICON_RESOLVER.resolve_icon(&entity.class_name.to_string()) {
             let pos = Pos2::new(
                 entity.pos_2d.x, 
                 entity.pos_2d.y);
@@ -196,7 +196,7 @@ impl Render {
                     entity.pos_2d.x, 
                     entity.pos_2d.y),
                 egui::Align2::CENTER_TOP,
-                entity.class_name.to_str(),
+                entity.class_name.to_string(),
                 font_id_text.clone(),
                 Color32::WHITE,
             );
@@ -314,7 +314,7 @@ impl Render {
             }
         }
 
-        let name = format_name(&player.name.to_str());
+        let name = format_name(&player.name.to_string());
         let font_id = egui::FontId::new(13.0, FontFamily::Monospace);
         let name_layout = ui.fonts(|fonts| fonts.layout_no_wrap(name.clone(), font_id.clone(), Color32::WHITE));
         let name_size = name_layout.size();

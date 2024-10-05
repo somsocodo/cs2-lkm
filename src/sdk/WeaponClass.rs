@@ -1,6 +1,8 @@
 use driver::Driver;
 use cs2_dumper::libclient_so::cs2_dumper::schemas;
 
+use serde::{Serialize, Deserialize};
+
 pub enum WeaponClass {
     Invalid,
     Knife,
@@ -11,7 +13,7 @@ pub enum WeaponClass {
     Shotgun,
 }
 
-#[derive(PartialEq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub enum GrenadeClass {
     Invalid,
     HeGrenade,
