@@ -470,6 +470,8 @@ impl EguiOverlay for Render {
                     ui.text_edit_singleline(&mut self.grenade_action);
                     if ui.button("save grenade").clicked() {
                         self.grenade_helper.save(self.grenade_name.clone(), self.grenade_action.clone());
+                        self.grenade_name.clear();
+                        self.grenade_action.clear();
                     }
                     if ui.button("reload").clicked() {
                         self.grenade_helper.load();

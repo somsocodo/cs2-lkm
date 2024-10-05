@@ -92,6 +92,11 @@ impl GrenadeHelper {
     }
 
     pub fn save(&mut self, name: String, action: String){
+
+        if name.is_empty() || action.is_empty() {
+            return;
+        }
+
         let local_player: PlayerBase = {
             let local_player_read = self.local_player.read().unwrap();
             local_player_read.clone()
