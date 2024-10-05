@@ -119,6 +119,10 @@ impl Render {
         for lat in (0..=25).map(|i| i as f32 * step) {
             let point_3d = Vector3 { x: lat.cos() * radius, y: lat.sin() * radius, z: 0.0};
             let point_2d = (pos + point_3d).world_to_screen(view_matrix);
+            if point_2d.x <= 0.0 || point_2d.y <= 0.0 {
+                return;
+            }
+            
             points.push(Pos2::new(
                 point_2d.x, 
                 point_2d.y));
