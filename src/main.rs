@@ -30,7 +30,7 @@ use sdk::Entity::{ EntityBase, Entity };
 mod config;
 use config::{init_config, init_keystate, SharedActiveState};
 
-mod features {pub mod combat; pub mod grenades;}
+mod features {pub mod esp; pub mod combat; pub mod grenades;}
 use features::{ combat };
 
 mod cs2_dumper {pub mod offsets; pub mod libclient_so;}
