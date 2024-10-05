@@ -9,6 +9,7 @@ use sdk::WeaponClass::{get_grenade_class, GrenadeClass};
 
 use egui::{ Color32 , Pos2, FontId, FontFamily };
 use serde::{Serialize, Deserialize};
+use serde_json::Value;
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::io::{ Seek, Read, Write};
@@ -39,6 +40,55 @@ impl GrenadeHelper {
             local_player,
             grenades: Vec::new()
         }
+    }
+
+    pub fn load(&mut self) {
+        let matchmaking_addr: usize = self.driver.read_module("libmatchmaking.so");
+        let p_map_name: usize = self.driver.read_mem(matchmaking_addr + offsets::libmatchmaking_so::dwGameTypes_mapName);
+        let map_name: CUtlString = self.driver.read_mem(p_map_name);
+        let map_name_str = map_name.to_string();
+
+        let mut file = match File::open("grenades.json") {
+            Ok(f) => f,
+            Err(e) => {
+                println!("Failed to open grenades.json: {}", e);
+                return;
+            }
+        };
+
+        let mut contents = String::new();
+        if let Err(e) = file.read_to_string(&mut contents) {
+            println!("Failed to read grenades.json: {}", e);
+            return;
+        }
+
+        let json: Value = match serde_json::from_str(&contents) {
+            Ok(j) => j,
+            Err(e) => {
+                println!("Failed to parse grenades.json: {}", e);
+                return;
+            }
+        };
+
+        self.grenades.clear();
+
+        if let Some(map_data) = json.as_array() {
+            for map_entry in map_data {
+                if let Some(grenades_array) = map_entry.get(&map_name_str) {
+                    if let Some(grenade_list) = grenades_array.as_array() {
+                        for grenade_value in grenade_list {
+                            if let Ok(grenade) = serde_json::from_value(grenade_value.clone()) {
+                                self.grenades.push(grenade);
+                            }
+                        }
+                        println!("grenades loaded for map: {}", map_name_str);
+                        return;
+                    }
+                }
+            }
+        }
+
+        println!("no grenades found for map: {}", map_name_str);
     }
 
     pub fn save(&mut self, name: String, action: String){
@@ -75,7 +125,7 @@ impl GrenadeHelper {
         self.grenades.push(grenade.clone());
         
         if let Err(e) = self.save_to_json(&map_name_str, grenade) {
-            println!("failed to save grenade{}", e);
+            println!("failed to save grenade {}", e);
         } else {
             println!("saved grenade");
         }

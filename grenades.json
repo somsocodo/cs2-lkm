@@ -1,0 +1,179 @@
+[
+  {
+    "de_dust2": [
+      {
+        "name": "Xbox",
+        "action": "Jumpthrow",
+        "grenade_class": "SmokeGrenade",
+        "pos": [
+          -512.0557,
+          -662.5382,
+          126.25858
+        ],
+        "throw_pos": [
+          -291.00378,
+          1318.0326,
+          353.92072
+        ]
+      },
+      {
+        "name": "mid doors",
+        "action": "Jumpthrow",
+        "grenade_class": "SmokeGrenade",
+        "pos": [
+          -438.51196,
+          -1051.9689,
+          128.03125
+        ],
+        "throw_pos": [
+          -394.79593,
+          941.29846,
+          349.90356
+        ]
+      },
+      {
+        "name": "b doors",
+        "action": "Jumpthrow",
+        "grenade_class": "SmokeGrenade",
+        "pos": [
+          -1428.2806,
+          -172.03125,
+          131.49231
+        ],
+        "throw_pos": [
+          -1284.2249,
+          1689.7141,
+          909.68024
+        ]
+      },
+      {
+        "name": "b doors",
+        "action": "Throw",
+        "grenade_class": "SmokeGrenade",
+        "pos": [
+          -1833.5217,
+          1225.0431,
+          32.18062
+        ],
+        "throw_pos": [
+          -1475.3635,
+          1946.0273,
+          1926.7607
+        ]
+      },
+      {
+        "name": "b doors",
+        "action": "Throw",
+        "grenade_class": "SmokeGrenade",
+        "pos": [
+          -2185.9688,
+          1059.0312,
+          39.6562
+        ],
+        "throw_pos": [
+          -1459.3958,
+          2025.5989,
+          1696.1101
+        ]
+      }
+    ]
+  },
+  {
+    "de_mirage": [
+      {
+        "name": "Middle",
+        "action": "Throw",
+        "grenade_class": "SmokeGrenade",
+        "pos": [
+          1422.9688,
+          70.96908,
+          -112.46875
+        ],
+        "throw_pos": [
+          -72.08679,
+          -432.54037,
+          1180.7155
+        ]
+      },
+      {
+        "name": "window",
+        "action": "D + Jumpthrow",
+        "grenade_class": "SmokeGrenade",
+        "pos": [
+          1389.4688,
+          70.96853,
+          -167.96875
+        ],
+        "throw_pos": [
+          -295.85583,
+          -397.81564,
+          865.3684
+        ]
+      },
+      {
+        "name": "window",
+        "action": "Run + Throw",
+        "grenade_class": "SmokeGrenade",
+        "pos": [
+          502.96854,
+          -656.63324,
+          -160.00201
+        ],
+        "throw_pos": [
+          -1440.0393,
+          -627.19714,
+          376.46265
+        ]
+      },
+      {
+        "name": "connector",
+        "action": "Jumpthrow (con)",
+        "grenade_class": "SmokeGrenade",
+        "pos": [
+          1422.9688,
+          36.46875,
+          -167.96875
+        ],
+        "throw_pos": [
+          -316.0929,
+          -668.46625,
+          587.7755
+        ]
+      },
+      {
+        "name": "connector",
+        "action": "Throw",
+        "grenade_class": "SmokeGrenade",
+        "pos": [
+          502.9674,
+          -64.03125,
+          -160.00208
+        ],
+        "throw_pos": [
+          -1123.6163,
+          -1126.5553,
+          377.95413
+        ]
+      }
+    ]
+  },
+  {
+    "aim_botz": [
+      {
+        "name": "test name",
+        "action": "test action",
+        "grenade_class": "SmokeGrenade",
+        "pos": [
+          688.0771,
+          -707.01636,
+          0.03125
+        ],
+        "throw_pos": [
+          1826.3845,
+          -1813.756,
+          1280.1704
+        ]
+      }
+    ]
+  }
+]

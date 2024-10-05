@@ -409,9 +409,6 @@ impl EguiOverlay for Render {
         _default_gfx_backend: &mut DefaultGfxBackend,
         glfw_backend: &mut egui_window_glfw_passthrough::GlfwBackend,
     ) {
-        ONCE.call_once(|| {
-            setup(egui_context);
-        });
 
         let show_gui = {
             let activestate_read = self.shared_activestae.read().unwrap();
@@ -474,6 +471,9 @@ impl EguiOverlay for Render {
                     if ui.button("save grenade").clicked() {
                         self.grenade_helper.save(self.grenade_name.clone(), self.grenade_action.clone());
                     }
+                    if ui.button("reload").clicked() {
+                        self.grenade_helper.load();
+                    }
                 });
             }
             if edit_config.gui_misc{
@@ -498,6 +498,11 @@ impl EguiOverlay for Render {
         self.esp_overlay(egui_context);
 
         egui_context.request_repaint();
+
+        ONCE.call_once(|| {
+            setup(egui_context);
+            self.grenade_helper.load();
+        });
     }
 }
 
