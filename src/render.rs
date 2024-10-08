@@ -243,14 +243,46 @@ impl EguiOverlay for Render {
                 egui::Window::new("combat")
                 .resizable(true)
                 .show(egui_context, |ui| {
-                    ui.checkbox(&mut edit_config.aim_enabled, "aim_enabled");
-                    ui.label("aim_fov");
-                    ui.add(egui::Slider::new(&mut edit_config.aim_fov, 0.0..=360.0));
-                    ui.label("aim_smoothing");
-                    ui.add(egui::Slider::new(&mut edit_config.aim_smoothing, 0.0..=10.0));
-                    ui.label("aim_shoot_delay");
-                    ui.add(egui::Slider::new(&mut edit_config.aim_shoot_delay, 0..=500));
-                    ui.checkbox(&mut edit_config.trigger_enabled, "trigger_enabled");
+                    ui.horizontal(|ui| {
+                        ui.vertical(|ui| {
+                            ui.checkbox(&mut edit_config.trigger_enabled, "trigger_enabled");
+                            ui.checkbox(&mut edit_config.aim_enabled, "aim_enabled");
+                        });
+                        ui.vertical(|ui| {
+                                ui.collapsing("Pistols", |ui| {
+                                ui.label("aim_fov");
+                                ui.add(egui::Slider::new(&mut edit_config.aim_fov, 0.0..=360.0));
+                                    ui.label("aim_smoothing");
+                                    ui.add(egui::Slider::new(&mut edit_config.aim_smoothing, 0.0..=10.0));
+                                    ui.label("aim_shoot_delay");
+                                    ui.add(egui::Slider::new(&mut edit_config.aim_shoot_delay, 0..=500));
+                                });
+                                ui.collapsing("Rifles", |ui| {
+                                    ui.label("aim_fov");
+                                    ui.add(egui::Slider::new(&mut edit_config.aim_fov, 0.0..=360.0));
+                                    ui.label("aim_smoothing");
+                                    ui.add(egui::Slider::new(&mut edit_config.aim_smoothing, 0.0..=10.0));
+                                    ui.label("aim_shoot_delay");
+                                    ui.add(egui::Slider::new(&mut edit_config.aim_shoot_delay, 0..=500));
+                                });
+                                ui.collapsing("Snipers", |ui| {
+                                    ui.label("aim_fov");
+                                    ui.add(egui::Slider::new(&mut edit_config.aim_fov, 0.0..=360.0));
+                                    ui.label("aim_smoothing");
+                                    ui.add(egui::Slider::new(&mut edit_config.aim_smoothing, 0.0..=10.0));
+                                    ui.label("aim_shoot_delay");
+                                    ui.add(egui::Slider::new(&mut edit_config.aim_shoot_delay, 0..=500));
+                                });
+                                ui.collapsing("Shotguns", |ui| {
+                                    ui.label("aim_fov");
+                                    ui.add(egui::Slider::new(&mut edit_config.aim_fov, 0.0..=360.0));
+                                    ui.label("aim_smoothing");
+                                    ui.add(egui::Slider::new(&mut edit_config.aim_smoothing, 0.0..=10.0));
+                                    ui.label("aim_shoot_delay");
+                                    ui.add(egui::Slider::new(&mut edit_config.aim_shoot_delay, 0..=500));
+                                });
+                            });
+                    });
                 });
             }
             if edit_config.gui_grenades{
