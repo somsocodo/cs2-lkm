@@ -3,6 +3,7 @@ use cs2_dumper::libclient_so::cs2_dumper::schemas;
 
 use serde::{Serialize, Deserialize};
 
+#[derive(PartialEq)]
 pub enum WeaponClass {
     Invalid,
     Knife,
