@@ -250,36 +250,37 @@ impl EguiOverlay for Render {
                         });
                         ui.vertical(|ui| {
                                 ui.collapsing("Pistols", |ui| {
-                                ui.label("aim_fov");
-                                ui.add(egui::Slider::new(&mut edit_config.aim_fov, 0.0..=360.0));
+                                    ui.label("aim_fov");
+                                    ui.add(egui::Slider::new(&mut edit_config.pistol_aim_fov, 0.0..=360.0));
                                     ui.label("aim_smoothing");
-                                    ui.add(egui::Slider::new(&mut edit_config.aim_smoothing, 0.0..=10.0));
+                                    ui.add(egui::Slider::new(&mut edit_config.pistol_aim_smoothing, 0.0..=10.0));
                                     ui.label("aim_shoot_delay");
-                                    ui.add(egui::Slider::new(&mut edit_config.aim_shoot_delay, 0..=500));
+                                    ui.add(egui::Slider::new(&mut edit_config.pistol_aim_shoot_delay, 0..=500));
                                 });
                                 ui.collapsing("Rifles", |ui| {
                                     ui.label("aim_fov");
-                                    ui.add(egui::Slider::new(&mut edit_config.aim_fov, 0.0..=360.0));
+                                    ui.add(egui::Slider::new(&mut edit_config.rifle_aim_fov, 0.0..=360.0));
                                     ui.label("aim_smoothing");
-                                    ui.add(egui::Slider::new(&mut edit_config.aim_smoothing, 0.0..=10.0));
+                                    ui.add(egui::Slider::new(&mut edit_config.rifle_aim_smoothing, 0.0..=10.0));
                                     ui.label("aim_shoot_delay");
-                                    ui.add(egui::Slider::new(&mut edit_config.aim_shoot_delay, 0..=500));
+                                    ui.add(egui::Slider::new(&mut edit_config.rifle_aim_shoot_delay, 0..=500));
                                 });
                                 ui.collapsing("Snipers", |ui| {
+                                    ui.checkbox(&mut edit_config.sniper_aim_scoped_only, "sniper_aim_scoped_only");
                                     ui.label("aim_fov");
-                                    ui.add(egui::Slider::new(&mut edit_config.aim_fov, 0.0..=360.0));
+                                    ui.add(egui::Slider::new(&mut edit_config.sniper_aim_fov, 0.0..=360.0));
                                     ui.label("aim_smoothing");
-                                    ui.add(egui::Slider::new(&mut edit_config.aim_smoothing, 0.0..=10.0));
+                                    ui.add(egui::Slider::new(&mut edit_config.sniper_aim_smoothing, 0.0..=10.0));
                                     ui.label("aim_shoot_delay");
-                                    ui.add(egui::Slider::new(&mut edit_config.aim_shoot_delay, 0..=500));
+                                    ui.add(egui::Slider::new(&mut edit_config.sniper_aim_shoot_delay, 0..=500));
                                 });
                                 ui.collapsing("Shotguns", |ui| {
                                     ui.label("aim_fov");
-                                    ui.add(egui::Slider::new(&mut edit_config.aim_fov, 0.0..=360.0));
+                                    ui.add(egui::Slider::new(&mut edit_config.shotgun_aim_fov, 0.0..=360.0));
                                     ui.label("aim_smoothing");
-                                    ui.add(egui::Slider::new(&mut edit_config.aim_smoothing, 0.0..=10.0));
+                                    ui.add(egui::Slider::new(&mut edit_config.shotgun_aim_smoothing, 0.0..=10.0));
                                     ui.label("aim_shoot_delay");
-                                    ui.add(egui::Slider::new(&mut edit_config.aim_shoot_delay, 0..=500));
+                                    ui.add(egui::Slider::new(&mut edit_config.shotgun_aim_shoot_delay, 0..=500));
                                 });
                             });
                     });

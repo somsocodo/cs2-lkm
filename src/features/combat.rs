@@ -42,7 +42,7 @@ fn mouse_up() {
     }
 }
 
-fn mouse_grabber(will_aim: Arc<RwLock<bool>>, shared_keystate: SharedActiveState, shared_config: SharedConfig) {
+fn mouse_grabber(shared_keystate: SharedActiveState, will_aim: Arc<RwLock<bool>>, aim_shoot_delay: Arc<RwLock<u64>>) {
     let click_scheduled = Arc::new(AtomicBool::new(false));
     let click_held = Arc::new(AtomicBool::new(false));
 
@@ -61,9 +61,9 @@ fn mouse_grabber(will_aim: Arc<RwLock<bool>>, shared_keystate: SharedActiveState
                             *will_aim
                         };
 
-                        let config = {
-                            let config_read = shared_config.read().unwrap();
-                            config_read.clone()
+                        let aim_shoot_delay = {
+                            let aim_shoot_delay = aim_shoot_delay.read().unwrap();
+                            *aim_shoot_delay
                         };
 
                         if will_aim_flag {
@@ -74,7 +74,7 @@ fn mouse_grabber(will_aim: Arc<RwLock<bool>>, shared_keystate: SharedActiveState
                                 let click_scheduled_inner = Arc::clone(&click_scheduled);
 
                                 thread::spawn(move || {
-                                    thread::sleep(Duration::from_millis(config.aim_shoot_delay));
+                                    thread::sleep(Duration::from_millis(aim_shoot_delay));
                                     mouse_down();
                                     click_held_inner.store(true, Ordering::SeqCst);
 
@@ -128,10 +128,16 @@ pub fn run_combat(
         let client_addr =  driver.read_module("libclient.so");
         let dwSensitivity: usize = driver.read_mem(client_addr + offsets::libclient_so::dwSensitivity);
         let sensitivity_raw: f32 = driver.read_mem(dwSensitivity + offsets::libclient_so::dwSensitivity_sensitivity);
-        
-        mouse_grabber(Arc::clone(&will_aim_shared), shared_activestate.clone(), shared_config.clone());
+
+        let mut aim_fov: f32 = 0.0;
+        let mut aim_smoothing: f32 = 0.0;
+        let aim_shoot_delay_shared = Arc::new(RwLock::new(0));
+
+        mouse_grabber(shared_activestate.clone(), Arc::clone(&will_aim_shared), Arc::clone(&aim_shoot_delay_shared));
 
         loop {
+            let mut skip_flag = false;
+
             let config = {
                 let config_read = shared_config.read().unwrap();
                 config_read.clone()
@@ -148,15 +154,46 @@ pub fn run_combat(
             };
 
             let weapon_class = get_weapon_class(&driver, local_player.pawn);
+            let fov_multipler: f32 = driver.read_mem(local_player.pawn + schemas::libclient_so::C_BasePlayerPawn::m_flFOVSensitivityAdjust);
+            let sensitivity = sensitivity_raw * fov_multipler;
+
+            match weapon_class {
+                WeaponClass::Pistol => {
+                    aim_fov = config.pistol_aim_fov;
+                    aim_smoothing = config.pistol_aim_smoothing;
+                    let mut aim_shoot_delay_write = aim_shoot_delay_shared.write().unwrap();
+                    *aim_shoot_delay_write = config.pistol_aim_shoot_delay;
+                },
+                WeaponClass::Rifle => {
+                    aim_fov = config.rifle_aim_fov;
+                    aim_smoothing = config.rifle_aim_smoothing;
+                    let mut aim_shoot_delay_write = aim_shoot_delay_shared.write().unwrap();
+                    *aim_shoot_delay_write = config.rifle_aim_shoot_delay;
+                },
+                WeaponClass::Sniper => {
+                    if config.sniper_aim_scoped_only && fov_multipler >= 1.0 {
+                        skip_flag = true;
+                    }
+                    aim_fov = config.sniper_aim_fov;
+                    aim_smoothing = config.sniper_aim_smoothing;
+                    let mut aim_shoot_delay_write = aim_shoot_delay_shared.write().unwrap();
+                    *aim_shoot_delay_write = config.sniper_aim_shoot_delay;
+                },
+                WeaponClass::Shotgun => {
+                    aim_fov = config.shotgun_aim_fov;
+                    aim_smoothing = config.shotgun_aim_smoothing;
+                    let mut aim_shoot_delay_write = aim_shoot_delay_shared.write().unwrap();
+                    *aim_shoot_delay_write = config.shotgun_aim_shoot_delay;
+                },
+                _ => {
+                    skip_flag = true;
+                }
+            }
 
             let mut closest_dist: f32 = INT_MAX as f32;
             let window_center = (config.window_size.0 as f32 / 2.0, config.window_size.1  as f32 / 2.0);
 
             let punch_angle: Vector2 = get_vec_punch(&driver, local_player.pawn);
-
-            let fov_multipler: f32 = driver.read_mem(local_player.pawn + schemas::libclient_so::C_BasePlayerPawn::m_flFOVSensitivityAdjust);
-            let sensitivity = sensitivity_raw * fov_multipler;
-
             let shots_fired: u32 = driver.read_mem(local_player.pawn + schemas::libclient_so::C_CSPlayerPawn::m_iShotsFired);
 
             if let Ok(players) = player_receiver.recv() {
@@ -166,7 +203,11 @@ pub fn run_combat(
                     }
 
                     if config.trigger_enabled && activestate.trigger && player.in_cross && punch_angle.x > -0.01 {
-                        click();
+                        if skip_flag {
+                            continue;
+                        } else {
+                            click();
+                        }
                     }
                 
                     let dist_x = (window_center.0 - player.bones_2d[0].x).abs();
@@ -180,7 +221,7 @@ pub fn run_combat(
                 }
             }
 
-            if !config.aim_enabled || closest_dist as i32 == INT_MAX || target.bones_3d[0].pos.is_zero() {
+            if !config.aim_enabled || skip_flag || closest_dist as i32 == INT_MAX || target.bones_3d[0].pos.is_zero() {
                 let mut will_aim_write = will_aim_shared.try_write().unwrap();
                 *will_aim_write = false;
                 continue;
@@ -192,7 +233,7 @@ pub fn run_combat(
             let aimbot_angle = get_target_angle(&driver, target_pos, punch_angle, shots_fired, weapon_class, local_player.pawn);
             let aimbot_fov = get_fov(view_angle, aimbot_angle);
 
-            if aimbot_fov > config.aim_fov {
+            if aimbot_fov > aim_fov {
                 let mut will_aim_write = will_aim_shared.try_write().unwrap();
                 *will_aim_write = false;    
                 continue;
@@ -216,12 +257,12 @@ pub fn run_combat(
             let mut smooth_x = 0.0f32;
             let mut smooth_y = 0.0f32;    
 
-            let ms = if config.aim_smoothing >= 1.0 {
+            let ms = if aim_smoothing >= 1.0 {
                 if x.abs() > 1.0 {
                     if smooth_x < x {
-                        smooth_x += 1.0 + (x / config.aim_smoothing);
+                        smooth_x += 1.0 + (x / aim_smoothing);
                     } else if smooth_x > x {
-                        smooth_x += (x / config.aim_smoothing) - 1.0;
+                        smooth_x += (x / aim_smoothing) - 1.0;
                     } else {
                         smooth_x = x;
                     }
@@ -231,16 +272,16 @@ pub fn run_combat(
 
                 if y.abs() > 1.0 {
                     if smooth_y < y {
-                        smooth_y += 1.0 + (y / config.aim_smoothing);
+                        smooth_y += 1.0 + (y / aim_smoothing);
                     } else if smooth_y > y {
-                        smooth_y += (y / config.aim_smoothing) - 1.0;
+                        smooth_y += (y / aim_smoothing) - 1.0;
                     } else {
                         smooth_y = y;
                     }
                 } else {
                     smooth_y = y;
                 }
-                ((config.aim_smoothing / 100.0) + 1.0) as i64 * 16
+                ((aim_smoothing / 100.0) + 1.0) as i64 * 16
             } else {
                 smooth_x = x;
                 smooth_y = y;
