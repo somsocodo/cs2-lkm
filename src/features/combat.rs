@@ -131,6 +131,7 @@ pub fn run_combat(
 
         let mut aim_fov: f32 = 0.0;
         let mut aim_smoothing: f32 = 0.0;
+        let mut aim_bone: usize = 0;
         let aim_shoot_delay_shared = Arc::new(RwLock::new(0));
 
         mouse_grabber(shared_activestate.clone(), Arc::clone(&will_aim_shared), Arc::clone(&aim_shoot_delay_shared));
@@ -161,12 +162,14 @@ pub fn run_combat(
                 WeaponClass::Pistol => {
                     aim_fov = config.pistol_aim_fov;
                     aim_smoothing = config.pistol_aim_smoothing;
+                    aim_bone = config.pistol_aim_bone;
                     let mut aim_shoot_delay_write = aim_shoot_delay_shared.write().unwrap();
                     *aim_shoot_delay_write = config.pistol_aim_shoot_delay;
                 },
                 WeaponClass::Rifle => {
                     aim_fov = config.rifle_aim_fov;
                     aim_smoothing = config.rifle_aim_smoothing;
+                    aim_bone = config.rifle_aim_bone;
                     let mut aim_shoot_delay_write = aim_shoot_delay_shared.write().unwrap();
                     *aim_shoot_delay_write = config.rifle_aim_shoot_delay;
                 },
@@ -176,12 +179,14 @@ pub fn run_combat(
                     }
                     aim_fov = config.sniper_aim_fov;
                     aim_smoothing = config.sniper_aim_smoothing;
+                    aim_bone = config.sniper_aim_bone;
                     let mut aim_shoot_delay_write = aim_shoot_delay_shared.write().unwrap();
                     *aim_shoot_delay_write = config.sniper_aim_shoot_delay;
                 },
                 WeaponClass::Shotgun => {
                     aim_fov = config.shotgun_aim_fov;
                     aim_smoothing = config.shotgun_aim_smoothing;
+                    aim_bone = config.shotgun_aim_bone;
                     let mut aim_shoot_delay_write = aim_shoot_delay_shared.write().unwrap();
                     *aim_shoot_delay_write = config.shotgun_aim_shoot_delay;
                 },
@@ -210,8 +215,8 @@ pub fn run_combat(
                         }
                     }
                 
-                    let dist_x = (window_center.0 - player.bones_2d[0].x).abs();
-                    let dist_y = (window_center.1 - player.bones_2d[0].y).abs();
+                    let dist_x = (window_center.0 - player.bones_2d[aim_bone].x).abs();
+                    let dist_y = (window_center.1 - player.bones_2d[aim_bone].y).abs();
                     let total_dist = dist_x + dist_y;
 
                     if total_dist < closest_dist {
@@ -221,13 +226,13 @@ pub fn run_combat(
                 }
             }
 
-            if !config.aim_enabled || skip_flag || closest_dist as i32 == INT_MAX || target.bones_3d[0].pos.is_zero() {
+            if !config.aim_enabled || skip_flag || closest_dist as i32 == INT_MAX || target.bones_3d[aim_bone].pos.is_zero() {
                 let mut will_aim_write = will_aim_shared.try_write().unwrap();
                 *will_aim_write = false;
                 continue;
             }
 
-            let target_pos = target.bones_3d[0].pos;
+            let target_pos = target.bones_3d[aim_bone].pos;
             let mut angles: Vector3 = Vector3 { x: 0.0, y: 0.0, z: 0.0 };
             let view_angle: Vector2 = driver.read_mem(local_player.pawn + schemas::libclient_so::C_BasePlayerPawn::v_angle);
             let aimbot_angle = get_target_angle(&driver, target_pos, punch_angle, shots_fired, weapon_class, local_player.pawn);

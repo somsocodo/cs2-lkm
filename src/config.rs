@@ -22,19 +22,23 @@ pub struct Config {
     pub trigger_enabled: bool,
     pub aim_enabled: bool,
 
+    pub pistol_aim_bone: usize,
     pub pistol_aim_fov: f32,
     pub pistol_aim_smoothing: f32,
     pub pistol_aim_shoot_delay: u64,
 
+    pub rifle_aim_bone: usize,
     pub rifle_aim_fov: f32,
     pub rifle_aim_smoothing: f32,
     pub rifle_aim_shoot_delay: u64,
 
+    pub sniper_aim_bone: usize,
     pub sniper_aim_scoped_only: bool,
     pub sniper_aim_fov: f32,
     pub sniper_aim_smoothing: f32,
     pub sniper_aim_shoot_delay: u64,
 
+    pub shotgun_aim_bone: usize,
     pub shotgun_aim_fov: f32,
     pub shotgun_aim_smoothing: f32,
     pub shotgun_aim_shoot_delay: u64,
@@ -61,19 +65,23 @@ impl Config {
             trigger_enabled: true,
             aim_enabled: true,
 
+            pistol_aim_bone: 0,
             pistol_aim_fov: 5.0,
             pistol_aim_smoothing: 3.5,
             pistol_aim_shoot_delay: 130,
-        
+            
+            rifle_aim_bone: 1,
             rifle_aim_fov: 5.0,
             rifle_aim_smoothing: 3.5,
             rifle_aim_shoot_delay: 130,
             
             sniper_aim_scoped_only: true,
+            sniper_aim_bone: 3,
             sniper_aim_fov: 5.0,
             sniper_aim_smoothing: 3.5,
             sniper_aim_shoot_delay: 130,
-        
+            
+            shotgun_aim_bone: 1,
             shotgun_aim_fov: 5.0,
             shotgun_aim_smoothing: 3.5,
             shotgun_aim_shoot_delay: 130,

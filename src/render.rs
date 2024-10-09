@@ -250,6 +250,15 @@ impl EguiOverlay for Render {
                         });
                         ui.vertical(|ui| {
                                 ui.collapsing("Pistols", |ui| {
+                                    ui.label("aim_bone");
+                                    egui::ComboBox::from_id_source("pistol_aim_bone")
+                                    .selected_text(format!("{:?}", edit_config.pistol_aim_bone))
+                                    .show_ui(ui, |ui| {
+                                        ui.selectable_value(&mut edit_config.pistol_aim_bone, 0, "HEAD");
+                                        ui.selectable_value(&mut edit_config.pistol_aim_bone, 1, "NECK");
+                                        ui.selectable_value(&mut edit_config.pistol_aim_bone, 2, "CHEST_UPPER");
+                                        ui.selectable_value(&mut edit_config.pistol_aim_bone, 3, "CHEST_LOWER");
+                                    });
                                     ui.label("aim_fov");
                                     ui.add(egui::Slider::new(&mut edit_config.pistol_aim_fov, 0.0..=360.0));
                                     ui.label("aim_smoothing");
@@ -258,6 +267,15 @@ impl EguiOverlay for Render {
                                     ui.add(egui::Slider::new(&mut edit_config.pistol_aim_shoot_delay, 0..=500));
                                 });
                                 ui.collapsing("Rifles", |ui| {
+                                    ui.label("aim_bone");
+                                    egui::ComboBox::from_id_source("rifle_aim_bone")
+                                    .selected_text(format!("{:?}", edit_config.rifle_aim_bone))
+                                    .show_ui(ui, |ui| {
+                                        ui.selectable_value(&mut edit_config.rifle_aim_bone, 0, "HEAD");
+                                        ui.selectable_value(&mut edit_config.rifle_aim_bone, 1, "NECK");
+                                        ui.selectable_value(&mut edit_config.rifle_aim_bone, 2, "CHEST_UPPER");
+                                        ui.selectable_value(&mut edit_config.rifle_aim_bone, 3, "CHEST_LOWER");
+                                    });
                                     ui.label("aim_fov");
                                     ui.add(egui::Slider::new(&mut edit_config.rifle_aim_fov, 0.0..=360.0));
                                     ui.label("aim_smoothing");
@@ -267,6 +285,15 @@ impl EguiOverlay for Render {
                                 });
                                 ui.collapsing("Snipers", |ui| {
                                     ui.checkbox(&mut edit_config.sniper_aim_scoped_only, "sniper_aim_scoped_only");
+                                    ui.label("aim_bone");
+                                    egui::ComboBox::from_id_source("sniper_aim_bone")
+                                    .selected_text(format!("{:?}", edit_config.sniper_aim_bone))
+                                    .show_ui(ui, |ui| {
+                                        ui.selectable_value(&mut edit_config.sniper_aim_bone, 0, "HEAD");
+                                        ui.selectable_value(&mut edit_config.sniper_aim_bone, 1, "NECK");
+                                        ui.selectable_value(&mut edit_config.sniper_aim_bone, 2, "CHEST_UPPER");
+                                        ui.selectable_value(&mut edit_config.sniper_aim_bone, 3, "CHEST_LOWER");
+                                    });
                                     ui.label("aim_fov");
                                     ui.add(egui::Slider::new(&mut edit_config.sniper_aim_fov, 0.0..=360.0));
                                     ui.label("aim_smoothing");
@@ -275,6 +302,15 @@ impl EguiOverlay for Render {
                                     ui.add(egui::Slider::new(&mut edit_config.sniper_aim_shoot_delay, 0..=500));
                                 });
                                 ui.collapsing("Shotguns", |ui| {
+                                    ui.label("aim_bone");
+                                    egui::ComboBox::from_id_source("shotgun_aim_bone")
+                                    .selected_text(format!("{:?}", edit_config.shotgun_aim_bone))
+                                    .show_ui(ui, |ui| {
+                                        ui.selectable_value(&mut edit_config.shotgun_aim_bone, 0, "HEAD");
+                                        ui.selectable_value(&mut edit_config.shotgun_aim_bone, 1, "NECK");
+                                        ui.selectable_value(&mut edit_config.shotgun_aim_bone, 2, "CHEST_UPPER");
+                                        ui.selectable_value(&mut edit_config.shotgun_aim_bone, 3, "CHEST_LOWER");
+                                    });
                                     ui.label("aim_fov");
                                     ui.add(egui::Slider::new(&mut edit_config.shotgun_aim_fov, 0.0..=360.0));
                                     ui.label("aim_smoothing");
