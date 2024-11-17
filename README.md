@@ -28,7 +28,7 @@ By using this software, you acknowledge the following:
 
 - clone cs2-dumper to project root ```git clone git@github.com:a2x/cs2-dumper.git -b linux```
 - build cs2-dumper ```cd cs2-dumper && cargo build```
-- run update.sh in project root ``sudo update.sh``
+- run update.sh in project root ``sudo bash update.sh``
 
 ## Usage
 
